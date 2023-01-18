@@ -1,0 +1,5 @@
+fastiot-service:
+  name: frontend
+
+  depends-on:
+    - nats

@@ -1,0 +1,8 @@
+venv
+.cache
+__pycache__
+.run
+docs
+build
+dist
+.docker-cache
