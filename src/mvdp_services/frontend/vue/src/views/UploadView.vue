@@ -1,9 +1,7 @@
 <template>
     <div style="border-style:solid">
-      <input type="file" ref="file" @change="readFile()" />
-      <div v-if="Image">
-        <img :src="preview" />
-      </div>
+      <input type="file" ref="file" @change="readFile" />
+      <button @click="submitFile">Upload!</button>
     </div>
 </template>
 
@@ -11,31 +9,25 @@
 export default {
     data() {
         return {
-            example: null,
-            Image: false,
-            preview: null
+            dataFile: null,
+            correctExtension: false
         }
     },
     methods: {
-    readFile() {
-      this.example = this.$refs.file.files[0];
-      if (
-        this.example.name.includes(".png") ||
-        this.example.name.includes(".jpg")
-      ) {
-        this.Image = true;
-        this.preview = URL.createObjectURL(this.example);
-      } else {
-        this.Image = false;
-      }
+        readFile() {
+            this.dataFile = this.$refs.file.files[0];
+        },
+        submitFile() {
+            if (this.dataFile.name.includes('.xlsx') || this.dataFile.name.includes('.csv')) {
+                this.correctExtension = true;
+                console.log('Correct file extension!')
+                console.log(this.dataFile)
+            } else {
+                this.correctExtenstion = false
+                console.log('Wrong file extension!')
+            }
+        }
     }
-  }
 }
 </script>
 
-<style scoped>
-    .imgBox {
-        height: 100px;
-        width: 100px;
-    }
-</style>
