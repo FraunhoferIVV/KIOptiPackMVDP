@@ -6,13 +6,21 @@ import { RouterLink, RouterView } from 'vue-router'
 <template>
   <header>
     <nav>
-      <RouterLink to="/">Home</RouterLink>
-      <RouterLink to="/upload">Upload</RouterLink>
+      <RouterLink class="nav-item" to="/">Home</RouterLink>
+      <RouterLink class="nav-item" to="/upload">Upload</RouterLink>
     </nav>
   </header>
   <RouterView />
 </template>
 
 <style scoped>
+  nav {
+    background-color: #25be6b;
+    padding: 30px;
 
+  }
+  .nav-item{
+    color: #260F43;
+    margin-right: 50px;
+  }
 </style>
