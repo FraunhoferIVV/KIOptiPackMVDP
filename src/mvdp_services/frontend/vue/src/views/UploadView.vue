@@ -2,9 +2,31 @@
     <div class="wrapper">
         <h1 class="file-upload-title">Hochladen einer XLSX- oder CSV-Datei</h1>
         <div class="file-upload-wrapper">
-            <form class="file-upload-form file-upload-item">
+            <form class="file-upload-item">
                 <input type="file" @change="readFile" />
                 <label for="file-uploader" class="file-upload"> <p>{{uploadMessage}}</p></label>
+            </form>
+            <form class="file-upload-item" id="radio-list">
+                <div class="radio-list-item" id="delimiter"></div>
+                    <p>Trennzeichen</p>
+                    <div>
+                        <input type="radio" id="delimiter-comma" name="delimiter" value="comma">
+                        <label for="delimiter-comma">Komma</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="delimiter-semicolon" name="delimiter" value="semicolon">
+                        <label for="delimiter-semicolon">Semicolon</label>
+                </div>
+                <div class="radio-list-item" id="decimal"></div>
+                    <p>Dezimaltrennzeichen</p>
+                    <div>
+                        <input type="radio" id="decimal-comma" name="decimal" value="comma">
+                        <label for="decimal-comma">Komma</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="decimal-point" name="decimal" value="point">
+                        <label for="decimal-point">Punkt</label>
+                </div>
             </form>
             <button class="file-upload-item" @click="submitFile">Hochladen</button>
         </div>
