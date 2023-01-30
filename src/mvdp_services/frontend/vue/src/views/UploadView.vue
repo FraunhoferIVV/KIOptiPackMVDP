@@ -7,25 +7,27 @@
                 <label for="file-uploader" class="file-upload"> <p>{{uploadMessage}}</p></label>
             </form>
             <form class="file-upload-item" id="radio-list">
-                <div class="radio-list-item" id="delimiter"></div>
+                <div class="radio-list-item" id="delimiter">
                     <p>Trennzeichen</p>
                     <div>
-                        <input type="radio" id="delimiter-comma" name="delimiter" value="comma">
-                        <label for="delimiter-comma">Komma</label>
+                        <input v-model="delimiterPick" type="radio" id="delimiter-semicolon" name="delimiter" value="semicolon" checked>
+                        <label for="delimiter-semicolon">Semicolon</label>
                     </div>
                     <div>
-                        <input type="radio" id="delimiter-semicolon" name="delimiter" value="semicolon">
-                        <label for="delimiter-semicolon">Semicolon</label>
+                        <input v-model="delimiterPick" type="radio" id="delimiter-comma" name="delimiter" value="comma">
+                        <label for="delimiter-comma">Komma</label>
+                    </div>  
                 </div>
-                <div class="radio-list-item" id="decimal"></div>
+                <div class="radio-list-item" id="decimal">
                     <p>Dezimaltrennzeichen</p>
                     <div>
-                        <input type="radio" id="decimal-comma" name="decimal" value="comma">
-                        <label for="decimal-comma">Komma</label>
+                        <input v-model="decimalPick" type="radio" id="decimal-point" name="decimal" value="point" checked>
+                        <label for="decimal-point">Punkt</label>
                     </div>
                     <div>
-                        <input type="radio" id="decimal-point" name="decimal" value="point">
-                        <label for="decimal-point">Punkt</label>
+                        <input v-model="decimalPick" type="radio" id="decimal-comma" name="decimal" value="comma">
+                        <label for="decimal-comma">Komma</label>
+                    </div>
                 </div>
             </form>
             <button class="file-upload-item" @click="submitFile">Hochladen</button>
@@ -40,7 +42,9 @@ export default {
     data() {
         return {
             dataFile: {} as File,
-            uploadMessage: ''
+            uploadMessage: '',
+            delimiterPick: "semicolon",
+            decimalPick: "point"
         }
     },
     methods: {
