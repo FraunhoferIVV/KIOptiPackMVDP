@@ -104,9 +104,12 @@ export default {
         border-radius: 5px;
         padding: 10px;
     }
-    /* .file-upload-form {
-    
-    }    */
+
+    #radio-list {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+    }
 
     .file-upload-item {
         margin-bottom: 15px;
