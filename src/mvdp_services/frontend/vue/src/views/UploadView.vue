@@ -2,10 +2,10 @@
     <div class="wrapper">
         <h1 class="file-title">Hochladen einer XLSX- oder CSV-Datei</h1>
         <form class="file-form">
-            <input class="file-form-item" id="file-upload" type="file" ref="file" @change="readFile" />
+            <input class="file-form-item" id="file-uploader" type="file" @change="readFile" />
             
-            <button class="ile-form-item" @click.left="submitFile">Hochladen</button>
-            <label for="file-upload" class="file-upload">{{uploadMessage}}</label>
+            <button class="file-form-item" @click="submitFile">Hochladen</button>
+            <label for="file-uploader" class="file-upload">{{uploadMessage}}</label>
         </form>
     </div>
 </template>
@@ -30,9 +30,6 @@ export default {
             } catch (err) {
                 console.log("Error accepting the file");
             }
-            console.log(': ' + this.uploadMessage)
-        },
-        submitFile() {  // add delimiter options!!! // finish posting!
             if (!this.dataFile) {
                 this.uploadMessage="Keine Datei!"
                 return;
@@ -54,8 +51,11 @@ export default {
                 this.uploadMessage = 'Falsche Dateierweiterung!';
             }
         },
+        submitFile() {  // add delimiter options!!! // finish posting!
+            
+        },
         checkExtension() {
-            if (this.dataFile.name.includes('.xlsx') || this.dataFile.name.includes('.csv')) {
+            if (this.dataFile.name && this.dataFile.name!.includes('.xlsx') || this.dataFile.name!.includes('.csv')) {
                 this.uploadMessage = 'Senden...';
                 return true;
             }
