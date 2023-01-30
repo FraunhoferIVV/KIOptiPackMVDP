@@ -16,11 +16,21 @@ import { RouterLink, RouterView } from 'vue-router'
 <style scoped>
   nav {
     background-color: #25be6b;
-    padding: 30px;
+    padding: 10px;
+    margin-bottom: 10px;
 
   }
   .nav-item{
+    margin-right: 10px;
+    padding: 5px 10px;
     color: #260F43;
-    margin-right: 50px;
+    font-size: 24px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 5px;
+  }
+  .nav-item:hover {
+    background-color: #6CDEC1;
+    color: #4B1E83;
   }
 </style>
