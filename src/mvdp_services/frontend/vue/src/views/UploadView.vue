@@ -1,8 +1,8 @@
 <template>
-    <div style="border-style:solid">
+    <form style="border-style:solid">
       <input type="file" ref="file" @change="readFile" />
       <button @click="submitFile">Upload!</button>
-    </div>
+    </form>
 </template>
 
 <script lang="ts">
