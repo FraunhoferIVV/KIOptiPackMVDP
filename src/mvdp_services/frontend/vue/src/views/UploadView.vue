@@ -6,34 +6,44 @@
 </template>
 
 <script lang="ts">
+import { FRAGMENT } from '@vue/compiler-core';
 import axios from 'axios';
+
+
 
 export default {
     data() {
         return {
-            dataFile: null,
+            dataFile: {} as File,
             correctExtension: false
         }
     },
     methods: {
-        readFile() {
-            this.dataFile = this.$refs.file.files[0];
+        readFile(event: Event) {
+            try {
+                const target = event.target as HTMLInputElement;
+                this.dataFile = target.files![0];
+            } catch (err) {
+                console.log("Error accepting the file");
+            }
         },
-        submitFile() {  // add delimiter options!!! // finish posting! // handle post-promise!
-            if (this.dataFile.name.includes('.xlsx') || this.dataFile.name.includes('.csv')) {
+        submitFile() {  // add delimiter options!!! // finish posting!
+            if (!this.dataFile) {
+                console.log("No file loaded!")
+                return;
+            }
+            if ((this.dataFile.name.includes('.xlsx') || this.dataFile.name.includes('.csv'))) {
                 this.correctExtension = true;
                 console.log('posting...')
                 const formData = new FormData()
                 formData.append('file', this.dataFile)
-                const headers = {}
-                const https = ''
-                axios.post(https, formData, {headers })
+                const postUrl = ''
+                axios.post(postUrl, formData)
                     .then((res) => {
-                        res.data.files;
-                        res.status;
+                        console.log(res.status);
                     })
             } else {
-                this.correctExtenstion = false
+                this.correctExtension = false
                 console.log('Wrong file extension!')
             }
         }
