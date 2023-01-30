@@ -1,12 +1,16 @@
 <template>
-    <form style="border-style:solid">
-      <input type="file" ref="file" @change="readFile" />
-      <button @click="submitFile">Upload!</button>
-    </form>
+    <div class="wrapper">
+        <h1 class="file-title">Hochladen einer XLSX- oder CSV-Datei</h1>
+        <form class="file-form">
+            <input class="file-form-item" id="file-upload" type="file" ref="file" @change="readFile" />
+            
+            <button class="ile-form-item" @click.left="submitFile">Hochladen</button>
+            <label for="file-upload" class="file-upload">{{uploadMessage}}</label>
+        </form>
+    </div>
 </template>
 
 <script lang="ts">
-import { FRAGMENT } from '@vue/compiler-core';
 import axios from 'axios';
 
 
@@ -15,7 +19,7 @@ export default {
     data() {
         return {
             dataFile: {} as File,
-            correctExtension: false
+            uploadMessage: ''
         }
     },
     methods: {
@@ -26,28 +30,58 @@ export default {
             } catch (err) {
                 console.log("Error accepting the file");
             }
+            console.log(': ' + this.uploadMessage)
         },
         submitFile() {  // add delimiter options!!! // finish posting!
             if (!this.dataFile) {
-                console.log("No file loaded!")
+                this.uploadMessage="Keine Datei!"
                 return;
             }
-            if ((this.dataFile.name.includes('.xlsx') || this.dataFile.name.includes('.csv'))) {
-                this.correctExtension = true;
+            if (this.checkExtension()) {
                 console.log('posting...')
                 const formData = new FormData()
                 formData.append('file', this.dataFile)
                 const postUrl = ''
                 axios.post(postUrl, formData)
                     .then((res) => {
-                        console.log(res.status);
-                    })
+                            console.log(res.status);
+                            this.uploadMessage = "Datei erfolgreich hochgelanden";
+                        }, (res) => {
+                            console.log(res.status);
+                            this.uploadMessage = "Fehler beim Hochladen";
+                        })
             } else {
-                this.correctExtension = false
-                console.log('Wrong file extension!')
+                this.uploadMessage = 'Falsche Dateierweiterung!';
             }
+        },
+        checkExtension() {
+            if (this.dataFile.name.includes('.xlsx') || this.dataFile.name.includes('.csv')) {
+                this.uploadMessage = 'Senden...';
+                return true;
+            }
+            return false;
         }
+
     }
 }
 </script>
 
+<style scoped>
+
+    .wrapper {
+        margin: 20px;
+    }
+    .file-form {
+        display: flex;
+        flex-direction: column;
+        width: 360px;
+        border: 1px solid black;
+        border-radius: 5px;
+        padding: 10px;
+    }
+
+    .file-form-item {
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+</style>
