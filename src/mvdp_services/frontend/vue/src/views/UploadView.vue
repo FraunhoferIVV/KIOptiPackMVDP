@@ -1,19 +1,18 @@
 <template>
     <div class="wrapper">
-        <h1 class="file-title">Hochladen einer XLSX- oder CSV-Datei</h1>
-        <form class="file-form">
-            <input class="file-form-item" id="file-uploader" type="file" @change="readFile" />
-            
-            <button class="file-form-item" @click="submitFile">Hochladen</button>
-            <label for="file-uploader" class="file-upload">{{uploadMessage}}</label>
-        </form>
+        <h1 class="file-upload-title">Hochladen einer XLSX- oder CSV-Datei</h1>
+        <div class="file-upload-wrapper">
+            <form class="file-upload-form file-upload-item">
+                <input type="file" @change="readFile" />
+                <label for="file-uploader" class="file-upload"> <p>{{uploadMessage}}</p></label>
+            </form>
+            <button class="file-upload-item" @click="submitFile">Hochladen</button>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
 import axios from 'axios';
-
-
 
 export default {
     data() {
@@ -30,10 +29,8 @@ export default {
             } catch (err) {
                 console.log("Error accepting the file");
             }
-            if (!this.dataFile) {
-                this.uploadMessage="Keine Datei!"
-                return;
-            }
+        },
+        submitFile() {  // add delimiter options!!! // finish posting!
             if (this.checkExtension()) {
                 console.log('posting...')
                 const formData = new FormData()
@@ -48,16 +45,17 @@ export default {
                             this.uploadMessage = "Fehler beim Hochladen";
                         })
             } else {
-                this.uploadMessage = 'Falsche Dateierweiterung!';
+                this.uploadMessage = 'Keine Datei oder falsche Dateierweiterung!';
             }
         },
-        submitFile() {  // add delimiter options!!! // finish posting!
-            
-        },
         checkExtension() {
-            if (this.dataFile.name && this.dataFile.name!.includes('.xlsx') || this.dataFile.name!.includes('.csv')) {
-                this.uploadMessage = 'Senden...';
-                return true;
+            try {
+                if (this.dataFile.name && this.dataFile.name.includes('.xlsx') || this.dataFile.name.includes('.csv')) {
+                    this.uploadMessage = 'Senden...';
+                    return true;
+                }
+            } catch (err) {
+                return false;
             }
             return false;
         }
@@ -71,7 +69,8 @@ export default {
     .wrapper {
         margin: 20px;
     }
-    .file-form {
+
+    .file-upload-wrapper {
         display: flex;
         flex-direction: column;
         width: 360px;
@@ -79,8 +78,11 @@ export default {
         border-radius: 5px;
         padding: 10px;
     }
+    /* .file-upload-form {
+    
+    }    */
 
-    .file-form-item {
+    .file-upload-item {
         margin-bottom: 15px;
         font-size: 14px;
     }
