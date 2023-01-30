@@ -1,5 +1,15 @@
 fastiot-service:
   name: frontend
 
+  mount_config_dir: required
+
+  ports: # List all ports of the module
+    - port: 5478
+      env_variable: "MVDP_FRONTEND_PORT"
+
+  npm:
+    src: vue
+    dist: dist
+
   depends-on:
     - nats
