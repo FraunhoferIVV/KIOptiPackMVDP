@@ -42,6 +42,7 @@ export default {
     data() {
         return {
             dataFile: {} as File,
+            fileType: 'csv',
             uploadMessage: '',
             fileDelimiters: [{
                     name: 'Semikolon',
@@ -71,23 +72,33 @@ export default {
         readFile(event: Event) {
             try {
                 const target = event.target as HTMLInputElement;
-                this.dataFile = target.files![0];
+                this.dataFile = target.files![0]; // File Object
             } catch (err) {
                 this.uploadMessage = 'Datei nicht gelesen';
             }
         },
-        submitFile() {  // add delimiter options!!! // finish posting!
+        submitFile() { 
             if (this.checkExtension() && this.checkConfiguration()) {
-                const formData = new FormData()
-                formData.append('file', this.dataFile)
-                const postUrl = ''
-                axios.post(postUrl, formData)
+                let formData = new FormData()
+                //formData.append('file', this.dataFile)
+                const postUrl = 'http://localhost:5478/api/post_some_data';
+
+                axios.post(postUrl, 
+                //formData
+                {
+  "machine": "string",
+  "name": "string",
+  "measurement_id": "58c297d8-a15c-11ed-b25d-d89ef316c36d",
+  "value": "string",
+  "timestamp": "2023-01-31T12:57:15.825Z",
+  "unit": ""
+})
                     .then((res) => {
                             console.log(res.status);
                             this.uploadMessage = "Datei erfolgreich hochgelanden";
                         }, (res) => {
                             console.log(res.status);
-                            this.uploadMessage = "Fehler beim Hochladen";
+                            this.uploadMessage = 'Fehler beim Hochladen';
                         })
             } 
         },
