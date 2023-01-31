@@ -1,36 +1,36 @@
 <template>
-    <div class="wrapper">
-        <h1 class="file-upload-title">Hochladen einer XLSX- oder CSV-Datei</h1>
-        <div class="file-upload-wrapper">
-            <form class="file-upload-item">
-                <input type="file" @change="readFile" />
-                <label for="file-uploader" class="file-upload"> <p>{{uploadMessage}}</p></label>
+    <div class="file-upload">
+        <h1 class="file-upload__title">Hochladen einer XLSX- oder CSV-Datei</h1>
+        <div class="file-upload__wrapper">
+            <form class="file-upload__item">
+                <input type="file" class="file-upload__input" id="file-uploader" @change="readFile" />
+                <label for="file-uploader" class="file-upload__input-label"> <p>{{uploadMessage}}</p></label>
             </form>
-            <form class="file-upload-item" id="radio-list">
-                <div class="radio-list-item" id="delimiter">
-                    <p>Trennzeichen</p>
-                    <div v-for="(delim, ind) in fileDelimiters" :key="ind">
-                        <input
+            <form class="file-upload__item radio-list">
+                <div class="radio-list__item" id="delimiter">
+                    <p class="radio-list__item-name">Trennzeichen</p>
+                    <div class="radio-field" v-for="(delim, ind) in fileDelimiters" :key="ind">
+                        <input class="radio-field__input-circle"
                             v-model="fileConfiguration.delimiterPick"
                             type="radio" name="delimiter"
                             :id="delim.id"
                             :value="delim.value">
-                        <label :for="delim.id">{{ delim.name }}</label>
+                        <label class="radio-field__label" :for="delim.id">{{ delim.name }}</label>
                     </div>
                 </div>
-                <div class="radio-list-item" id="decimal">
-                    <p>Dezimaltrennzeichen</p>
-                    <div v-for="(delim, ind) in decimalDelimiters" :key="ind">
-                        <input
+                <div class="radio-list__item" id="decimal">
+                    <p class="radio-list__item-name">Dezimaltrennzeichen</p>
+                    <div class="radio-field" v-for="(delim, ind) in decimalDelimiters" :key="ind">
+                        <input class="radio-field__input-circle"
                             v-model="fileConfiguration.decimalPick"
                             type="radio" name="decimal"
                             :id="delim.id"
                             :value="delim.value">
-                        <label :for="delim.id">{{ delim.name }}</label>
+                        <label class="radio-field__label" :for="delim.id">{{ delim.name }}</label>
                     </div>
                 </div>
             </form>
-            <button class="file-upload-item" @click="submitFile">Hochladen</button>
+            <button class="file-upload__item file-upload__submit-button" @click="submitFile">Hochladen</button>
         </div>
     </div>
 </template>
@@ -118,11 +118,11 @@ export default {
 
 <style scoped>
 
-    .wrapper {
+    .file-upload {
         margin: 20px;
     }
 
-    .file-upload-wrapper {
+    .file-upload__wrapper {
         display: flex;
         flex-direction: column;
         width: 360px;
@@ -131,13 +131,13 @@ export default {
         padding: 10px;
     }
 
-    #radio-list {
+    .radio-list {
         display: flex;
         flex-direction: row;
         justify-content: space-around;
     }
 
-    .file-upload-item {
+    .file-upload__item {
         margin-bottom: 15px;
         font-size: 14px;
     }
