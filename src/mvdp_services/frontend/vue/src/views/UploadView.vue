@@ -80,19 +80,9 @@ export default {
         submitFile() { 
             if (this.checkExtension() && this.checkConfiguration()) {
                 let formData = new FormData()
-                //formData.append('file', this.dataFile)
+                formData.append('file', this.dataFile) 
                 const postUrl = 'http://localhost:5478/api/post_some_data';
-
-                axios.post(postUrl, 
-                //formData
-                {
-  "machine": "string",
-  "name": "string",
-  "measurement_id": "58c297d8-a15c-11ed-b25d-d89ef316c36d",
-  "value": "string",
-  "timestamp": "2023-01-31T12:57:15.825Z",
-  "unit": ""
-})
+                axios.post(postUrl, formData)
                     .then((res) => {
                             console.log(res.status);
                             this.uploadMessage = "Datei erfolgreich hochgelanden";
