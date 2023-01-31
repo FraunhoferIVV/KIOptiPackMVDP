@@ -10,22 +10,22 @@
                 <div class="radio-list-item" id="delimiter">
                     <p>Trennzeichen</p>
                     <div>
-                        <input v-model="delimiterPick" type="radio" id="delimiter-semicolon" name="delimiter" value="semicolon" checked>
+                        <input v-model="fileConfiguration.delimiterPick" type="radio" id="delimiter-semicolon" name="delimiter" value="semicolon" checked>
                         <label for="delimiter-semicolon">Semicolon</label>
                     </div>
                     <div>
-                        <input v-model="delimiterPick" type="radio" id="delimiter-comma" name="delimiter" value="comma">
+                        <input v-model="fileConfiguration.delimiterPick" type="radio" id="delimiter-comma" name="delimiter" value="comma">
                         <label for="delimiter-comma">Komma</label>
                     </div>  
                 </div>
                 <div class="radio-list-item" id="decimal">
                     <p>Dezimaltrennzeichen</p>
                     <div>
-                        <input v-model="decimalPick" type="radio" id="decimal-point" name="decimal" value="point" checked>
+                        <input v-model="fileConfiguration.decimalPick" type="radio" id="decimal-point" name="decimal" value="point" checked>
                         <label for="decimal-point">Punkt</label>
                     </div>
                     <div>
-                        <input v-model="decimalPick" type="radio" id="decimal-comma" name="decimal" value="comma">
+                        <input v-model="fileConfiguration.decimalPick" type="radio" id="decimal-comma" name="decimal" value="comma">
                         <label for="decimal-comma">Komma</label>
                     </div>
                 </div>
@@ -43,8 +43,24 @@ export default {
         return {
             dataFile: {} as File,
             uploadMessage: '',
-            delimiterPick: "semicolon",
-            decimalPick: "point"
+            fileDelimiter: [{
+                    name: 'Semikolon',
+                    value: 'semicolon'
+                }, {
+                    name: 'Komma',
+                    value: 'comma'
+                }],
+            decimalDelimiter: [{
+                    name: 'Punkt',
+                    value: 'point'
+                }, {
+                    name: 'Komma',
+                    value: 'comma'
+                }],
+            fileConfiguration: {
+                delimiterPick: 'semicolon',
+                decimalPick: 'point', 
+            }
         }
     },
     methods: {
@@ -53,12 +69,11 @@ export default {
                 const target = event.target as HTMLInputElement;
                 this.dataFile = target.files![0];
             } catch (err) {
-                console.log("Error accepting the file");
+                this.uploadMessage = 'Datei nicht gelesen';
             }
         },
         submitFile() {  // add delimiter options!!! // finish posting!
-            if (this.checkExtension()) {
-                console.log('posting...')
+            if (this.checkConfiguration() && this.checkExtension()) {
                 const formData = new FormData()
                 formData.append('file', this.dataFile)
                 const postUrl = ''
@@ -70,9 +85,7 @@ export default {
                             console.log(res.status);
                             this.uploadMessage = "Fehler beim Hochladen";
                         })
-            } else {
-                this.uploadMessage = 'Keine Datei oder falsche Dateierweiterung!';
-            }
+            } 
         },
         checkExtension() {
             try {
@@ -80,10 +93,19 @@ export default {
                     this.uploadMessage = 'Senden...';
                     return true;
                 }
+                this.uploadMessage = 'Falsche Dateierweiterung!';
+                return false;
             } catch (err) {
+                this.uploadMessage = 'Keine Datei vorhanden!';
                 return false;
             }
-            return false;
+        },
+        checkConfiguration() {
+            if (this.fileConfiguration.decimalPick ==  this.fileConfiguration.delimiterPick) {
+                this.uploadMessage = 'Nicht akzeptierbare Trennzeichenkonfiguration';
+                return false;
+            }
+            return true;
         }
 
     }
