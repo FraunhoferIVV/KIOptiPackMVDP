@@ -9,24 +9,24 @@
             <form class="file-upload-item" id="radio-list">
                 <div class="radio-list-item" id="delimiter">
                     <p>Trennzeichen</p>
-                    <div>
-                        <input v-model="fileConfiguration.delimiterPick" type="radio" id="delimiter-semicolon" name="delimiter" value="semicolon" checked>
-                        <label for="delimiter-semicolon">Semicolon</label>
+                    <div v-for="(delim, ind) in fileDelimiters" :key="ind">
+                        <input
+                            v-model="fileConfiguration.delimiterPick"
+                            type="radio" name="delimiter"
+                            :id="delim.id"
+                            :value="delim.value">
+                        <label :for="delim.id">{{ delim.name }}</label>
                     </div>
-                    <div>
-                        <input v-model="fileConfiguration.delimiterPick" type="radio" id="delimiter-comma" name="delimiter" value="comma">
-                        <label for="delimiter-comma">Komma</label>
-                    </div>  
                 </div>
                 <div class="radio-list-item" id="decimal">
                     <p>Dezimaltrennzeichen</p>
-                    <div>
-                        <input v-model="fileConfiguration.decimalPick" type="radio" id="decimal-point" name="decimal" value="point" checked>
-                        <label for="decimal-point">Punkt</label>
-                    </div>
-                    <div>
-                        <input v-model="fileConfiguration.decimalPick" type="radio" id="decimal-comma" name="decimal" value="comma">
-                        <label for="decimal-comma">Komma</label>
+                    <div v-for="(delim, ind) in decimalDelimiters" :key="ind">
+                        <input
+                            v-model="fileConfiguration.decimalPick"
+                            type="radio" name="decimal"
+                            :id="delim.id"
+                            :value="delim.value">
+                        <label :for="delim.id">{{ delim.name }}</label>
                     </div>
                 </div>
             </form>
@@ -43,19 +43,23 @@ export default {
         return {
             dataFile: {} as File,
             uploadMessage: '',
-            fileDelimiter: [{
+            fileDelimiters: [{
                     name: 'Semikolon',
-                    value: 'semicolon'
+                    value: 'semicolon',
+                    id: 'delimiters-semicolon'
                 }, {
                     name: 'Komma',
-                    value: 'comma'
+                    value: 'comma',
+                    id: 'delimiters-comma'
                 }],
-            decimalDelimiter: [{
+            decimalDelimiters: [{
                     name: 'Punkt',
-                    value: 'point'
+                    value: 'point',
+                    id: 'decimals-point'
                 }, {
                     name: 'Komma',
-                    value: 'comma'
+                    value: 'comma',
+                    id: 'decimals-comma'
                 }],
             fileConfiguration: {
                 delimiterPick: 'semicolon',
@@ -73,7 +77,7 @@ export default {
             }
         },
         submitFile() {  // add delimiter options!!! // finish posting!
-            if (this.checkConfiguration() && this.checkExtension()) {
+            if (this.checkExtension() && this.checkConfiguration()) {
                 const formData = new FormData()
                 formData.append('file', this.dataFile)
                 const postUrl = ''
