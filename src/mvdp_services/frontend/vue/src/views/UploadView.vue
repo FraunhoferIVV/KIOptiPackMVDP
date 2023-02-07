@@ -4,7 +4,7 @@
         <div class="file-upload__wrapper">
             <div class="file-upload__item form-group">
                 <input type="file" class="file-upload__input form-control" id="file-uploader" @change="readFile" />
-                <label for="file-uploader" class="file-upload__input-label"> <p>{{uploadMessage}}</p></label>
+                <label for="file-uploader" class="file-upload__input-label">{{uploadMessage}}</label>
             </div>
             <div class="file-upload__item radio-list">
                 <div class="radio-list__item form-check" id="delimiter">
@@ -30,7 +30,9 @@
                     </div>
                 </div>
             </div>
-            <button class="file-upload__item file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Hochladen</button>
+            <div class="file-upload__item">
+                <button class="file-upload__item file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Hochladen</button>
+            </div>
         </div>
     </div>
 </template>
@@ -44,7 +46,7 @@ export default {
         return {
             dataFile: {} as File,
             fileType: 'csv',
-            uploadMessage: '',
+            uploadMessage: 'Noch keine Datei ausgewählt',
             fileDelimiters: [{
                     name: 'Semikolon',
                     value: 'semicolon',
@@ -134,7 +136,8 @@ export default {
     }
 
     .file-upload__item {
-        padding: 10px;
+        margin: 5px;
+        padding: 5px;
         font-size: 18px;
     }
 
