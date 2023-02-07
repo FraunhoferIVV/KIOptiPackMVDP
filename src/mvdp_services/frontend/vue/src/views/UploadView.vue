@@ -56,7 +56,7 @@
                 
             </div>
             <div class="file-upload__item">
-                <button class="file-upload__item file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Hochladen</button>
+                <button class="file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Hochladen</button>
             </div>
         </div>
     </div>
@@ -173,9 +173,16 @@ export default {
         font-size: 18px;
     }
 
+    .file-upload__input {
+        width: 500px;
+    }
     .file-upload__input-label {
         margin: 5px 0 0 5px;
         font-size: 18px;
+    }
+
+    .file-upload__submit-button {
+        width: 300px;
     }
 
     .radio-list {
