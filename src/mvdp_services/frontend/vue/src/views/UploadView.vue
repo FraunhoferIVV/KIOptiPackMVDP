@@ -108,6 +108,7 @@ export default {
             try {
                 const target = event.target as HTMLInputElement;
                 this.dataFile = target.files![0]; // File Object
+                this.uploadMessage = '';
             } catch (err) {
                 this.uploadMessage = 'Datei nicht gelesen';
             }
