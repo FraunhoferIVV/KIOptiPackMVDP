@@ -11,14 +11,4 @@ class UploadData(FastIoTData):
     materialID: Optional[str]
 
 
-# Example:
-"""
-{
-  "dataFile": "data, data, data", 
-  "fileConfig": {
-     "dataDelimiter": "semicolon",
-     "decimalDelimiter": "point"
-  },
-  "materialID": "Verpackung2"
-}
-"""
+
