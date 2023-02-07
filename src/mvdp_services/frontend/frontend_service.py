@@ -13,11 +13,12 @@ from fastiot.core import FastIoTService, subscribe, loop
 from fastiot.core.core_uuid import get_uuid
 from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
-from mvdp_services.frontend.uvicorn_server import UvicornAsyncServer
 from starlette.middleware.cors import CORSMiddleware
 
 from mvdp_services.frontend.env import env_frontend
+from mvdp_services.frontend.uvicorn_server import UvicornAsyncServer
 
+from UploadData import UploadData
 
 class FrontendService(FastIoTService):
 
@@ -40,12 +41,17 @@ class FrontendService(FastIoTService):
             allow_headers=["*"],
         )
 
-        self.app.get("/get_some_data")(self._handle_get)
-        self.app.post("/post_some_data")(self._handle_post)
-        self.app.mount("/",
-                       StaticFiles(directory=os.path.join(os.path.dirname(__file__), "vue", "dist"),
-                                   html=True),
-                       name="static")
+        self.app.get("/api/get_some_data")(self._handle_get)
+        self.app.post("/api/post_some_data")(self._handle_post)
+        try:
+            self.app.mount("/",
+                           StaticFiles(directory=os.path.join(os.path.dirname(__file__), "vue", "dist"),
+                                       html=True),
+                           name="static")
+        except RuntimeError:
+            pass
+
+
 
     async def _start(self):
         """ Methods to start once the module is initialized """
@@ -65,15 +71,15 @@ class FrontendService(FastIoTService):
         return {"hello_world": "Good morning!",
                 "last_message": self.last_msg}
 
-    def _handle_post(self, message: Thing):
+    def _handle_post(self, message: UploadData):
         """
         Simple handling of Post Request
 
         the = Body(...) is needed as we don’t use pydantic classes,
         s. https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter for more details
         """
-        message.value = message.value * 2
-        return Thing(message)
+
+        return message
 
     @loop
     async def _produce(self):
@@ -97,6 +103,7 @@ class FrontendService(FastIoTService):
     @subscribe(subject=Thing.get_subject('*'))
     async def _consume(self, topic: str, msg: Thing):
         """ Subscribing to `Thing.*` messages """
+        self.last_msg = msg
         logging.info("%s: %s", topic, str(msg))
 
 

@@ -1,4 +1,5 @@
 infrastructure-services:
   nats:
+  mongodb:
 
 services: {}
