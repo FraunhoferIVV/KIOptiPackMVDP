@@ -30,6 +30,31 @@
                     </div>
                 </div>
             </div>
+            <div class="file-upload__item dropdown form-group">
+                <label class="dropdown__description">Zugehörige Material-ID:
+                    <div class="dropdown__body">
+                        <input class="dropdown__input form-control" list="materialID" name="materialID" v-model="materialID"/>
+                        <div class="dropdown__status">
+                            <span v-if="displayOkMaterialId" class="dropdown__status--ok">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-bookmark-check" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                                <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
+                                </svg>
+                            </span>
+                            <span v-if="!displayOkMaterialId" class="dropdown__status--wrong">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-bookmark-x" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M6.146 5.146a.5.5 0 0 1 .708 0L8 6.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 7l1.147 1.146a.5.5 0 0 1-.708.708L8 7.707 6.854 8.854a.5.5 0 1 1-.708-.708L7.293 7 6.146 5.854a.5.5 0 0 1 0-.708z"/>
+                                <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                </label>
+                <datalist id="materialID">
+                    <option v-for="(option, ind) in materialOptions" :key="ind" :value="option"></option>
+                </datalist>
+                
+            </div>
             <div class="file-upload__item">
                 <button class="file-upload__item file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Hochladen</button>
             </div>
@@ -68,7 +93,14 @@ export default {
             fileConfiguration: {
                 delimiterPick: 'semicolon',
                 decimalPick: 'point', 
-            }
+            },
+            materialOptions: ['Verpackung1', 'Verpackung2', 'Verpackung3'],
+            materialID: ''
+        }
+    },
+    computed: {
+        displayOkMaterialId() {
+            return this.materialID == '' || this.materialOptions.includes(this.materialID)
         }
     },
     methods: {
@@ -93,7 +125,8 @@ export default {
                             console.log(res.status);
                             this.uploadMessage = 'Fehler beim Hochladen';
                         })
-            } 
+            }
+            console.log(this.materialID)
         },
         checkExtension() {
             try {
@@ -115,7 +148,6 @@ export default {
             }
             return true;
         }
-
     }
 }
 </script>
@@ -159,4 +191,30 @@ export default {
         font-weight: bold;
         font-size: 20px;
     }
+
+    .dropdown__description {
+        font-weight: bold;
+    }
+
+    .dropdown__body {
+        display: flex;
+    }
+
+    .dropdown__status {
+        margin-left: 10px;
+    }
+
+    .dropdown__status svg {
+        width: 30px;
+        height: 30px;
+    }
+
+    .dropdown__status--ok {
+        color: green;
+    }
+
+    .dropdown__status--wrong {
+        color: red;
+    }
+
 </style>
