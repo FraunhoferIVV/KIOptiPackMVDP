@@ -10,8 +10,11 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@popperjs/core": "^2.11.6",
     "@vue/cli-service": "^5.0.8",
     "axios": "^1.2.4",
+    "bootstrap": "^5.2.3",
+    "bootstrap-icons": "^1.10.3",
     "papaparse": "^5.3.2",
     "pinia": "^2.0.28",
     "vue": "^3.2.45",
