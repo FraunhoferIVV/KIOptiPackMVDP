@@ -115,8 +115,24 @@ export default {
         },
         submitFile() { 
             if (this.checkExtension() && this.checkConfiguration()) {
+                // build post data
                 let formData = new FormData()
-                formData.append('file', this.dataFile) 
+                // add dataFile
+                formData.append('dataFile', this.dataFile) 
+                // extra formData for fileConfig
+                let formDataConfig = new FormData()
+                formDataConfig.append('dataDelimiter', this.fileConfiguration.delimiterPick)
+                formDataConfig.append('decimalDelimiter', this.fileConfiguration.decimalPick)
+                // add fileConfig
+                formData.append('fileConfig', formDataConfig)
+                // add materialId if exists
+                if (this.displayOkMaterialId)
+                    formData.append('materialID', this.materialID)
+                //
+                for (var pair of formData.entries()) {
+                    console.log(pair[0]+ ', ' + pair[1]); 
+                }
+                // post formData
                 const postUrl = 'http://localhost:5478/api/post_some_data';
                 axios.post(postUrl, formData)
                     .then((res) => {
@@ -127,7 +143,7 @@ export default {
                             this.uploadMessage = 'Fehler beim Hochladen';
                         })
             }
-            console.log(this.materialID)
+
         },
         checkExtension() {
             try {
