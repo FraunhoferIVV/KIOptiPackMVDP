@@ -4,3 +4,5 @@ aiofiles
 uvicorn[standard]
 
 pandas
+
+edc_management_client

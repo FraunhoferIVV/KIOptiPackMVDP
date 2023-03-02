@@ -15,10 +15,10 @@ from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 
+from mvdp_services.frontend.UploadData import UploadData
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.uvicorn_server import UvicornAsyncServer
 
-from UploadData import UploadData
 
 class FrontendService(FastIoTService):
 
@@ -50,8 +50,6 @@ class FrontendService(FastIoTService):
                            name="static")
         except RuntimeError:
             pass
-
-
 
     async def _start(self):
         """ Methods to start once the module is initialized """
