@@ -1,5 +1,6 @@
 infrastructure-services:
   nats:
   mongodb:
+  edc:
 
 services: {}

@@ -1,4 +1,4 @@
-extensions = ['fastiot_ivv_tools.extension']
+extensions = ['fastiot_ivv_tools.extension', 'mvdp.fiot_extension']
 
 project_namespace = 'mvdp'
 
