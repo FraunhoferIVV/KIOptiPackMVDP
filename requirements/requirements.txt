@@ -5,4 +5,4 @@ uvicorn[standard]
 
 pandas
 
-edc_management_client
+edc_management_client>=0.0.3
