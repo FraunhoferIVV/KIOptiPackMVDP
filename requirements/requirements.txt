@@ -5,5 +5,5 @@ aiofiles
 uvicorn[standard]
 
 pandas
-xlrd
+openpyxl
 edc_management_client>=0.0.3

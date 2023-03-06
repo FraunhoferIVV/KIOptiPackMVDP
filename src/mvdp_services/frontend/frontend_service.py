@@ -72,7 +72,7 @@ class FrontendService(FastIoTService):
         return {"hello_world": "Good morning!",
                 "last_message": self.last_msg}
 
-    async def _handle_post(self, data_file: bytes = UploadFile(...),
+    async def _handle_post(self, data_file: bytes = File(),
                            file_type: str = Form(...),
                            data_delimiter: str = Form(...),
                            decimal_delimiter: str = Form(...),
@@ -84,28 +84,20 @@ class FrontendService(FastIoTService):
         s. https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter for more details
         """
 
-        self.upload_data = UploadData(data_file, file_type, data_delimiter, decimal_delimiter, material_ID)
+        decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
+        data_delimiters = {'comma': ','}
 
-        data_frame = pd.read_excel(data_file.file)
+        if file_type == '.csv':
+            data_frame = pd.read_csv(str(data_file),
+                                     sep=data_delimiters.get(data_delimiter, ","),
+                                     delimiter=decimal_delimiter)
+        if file_type == '.xlsx':
+            data_frame = pd.read_excel(data_file)
 
-        data_frame = self.parse_upload_data()
-
-        if data_frame == None:
+        if data_frame is None:
             return "Fehler bei der Datenextraktion"
 
         return "Datei erfolgreich hochgeladen"
-
-    async def parse(self):
-        try:
-            if self.upload_data.file_type == '.csv':
-                data_frame = await pd.read_csv(self.upload_data.data_file.file,
-                                               sep=self.upload_data.get_sep(),
-                                               delimiter=self.upload_data.get_delimiter())
-            if self.upload_data.file_type == '.xlsx':
-                data_frame = await pd.read_excel(self.upload_data.data_file.file)
-            return data_frame
-        except:
-            return None
 
 
 if __name__ == '__main__':
