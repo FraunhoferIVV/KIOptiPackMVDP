@@ -6,8 +6,11 @@ import asyncio
 import logging
 import os
 import random
+from typing import Optional
 
-from fastapi import FastAPI
+import pandas as pd
+
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
 from fastiot.core import FastIoTService, subscribe, loop
 from fastiot.core.core_uuid import get_uuid
@@ -69,7 +72,11 @@ class FrontendService(FastIoTService):
         return {"hello_world": "Good morning!",
                 "last_message": self.last_msg}
 
-    def _handle_post(self, message: UploadData):
+    async def _handle_post(self, data_file: bytes = UploadFile(...),
+                           file_type: str = Form(...),
+                           data_delimiter: str = Form(...),
+                           decimal_delimiter: str = Form(...),
+                           material_ID: str = Form(...)):
         """
         Simple handling of Post Request
 
@@ -77,34 +84,30 @@ class FrontendService(FastIoTService):
         s. https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter for more details
         """
 
-        return message
+        self.upload_data = UploadData(data_file, file_type, data_delimiter, decimal_delimiter, material_ID)
 
-    @loop
-    async def _produce(self):
-        """ Creating some dummy data and publish it """
-        sensor_name = f'my_sensor_{random.randint(1, 5)}'
-        value = random.randint(20, 30)
-        subject = Thing.get_subject(sensor_name)
-        await self.broker_connection.publish(
-            subject=subject,
-            msg=Thing(
-                name=sensor_name,
-                machine='FastIoT_Example_Machine',
-                measurement_id=get_uuid(),
-                value=value,
-                timestamp=get_time_now()
-            )
-        )
-        logging.info("Published %d on sensor %s", value, subject.name)
-        return asyncio.sleep(2)
+        data_frame = pd.read_excel(data_file.file)
 
-    @subscribe(subject=Thing.get_subject('*'))
-    async def _consume(self, topic: str, msg: Thing):
-        """ Subscribing to `Thing.*` messages """
-        self.last_msg = msg
-        logging.info("%s: %s", topic, str(msg))
+        data_frame = self.parse_upload_data()
+
+        if data_frame == None:
+            return "Fehler bei der Datenextraktion"
+
+        return "Datei erfolgreich hochgeladen"
+
+    async def parse(self):
+        try:
+            if self.upload_data.file_type == '.csv':
+                data_frame = await pd.read_csv(self.upload_data.data_file.file,
+                                               sep=self.upload_data.get_sep(),
+                                               delimiter=self.upload_data.get_delimiter())
+            if self.upload_data.file_type == '.xlsx':
+                data_frame = await pd.read_excel(self.upload_data.data_file.file)
+            return data_frame
+        except:
+            return None
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     FrontendService.main()
