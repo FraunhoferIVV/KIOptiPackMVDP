@@ -118,14 +118,16 @@ export default {
                 // build post data
                 let formData = new FormData()
                 // add dataFile
-                formData.append('dataFile', this.dataFile) 
-                formData.append('fileType', this.fileType)
+                formData.append('data_file', this.dataFile) 
+                formData.append('file_type', this.fileType)
                 // add dataFile configuration
-                formData.append('dataDelimiter', this.fileConfiguration.delimiterPick)
-                formData.append('decimalDelimiter', this.fileConfiguration.decimalPick)
+                formData.append('data_delimiter', this.fileConfiguration.delimiterPick)
+                formData.append('decimal_delimiter', this.fileConfiguration.decimalPick)
                 // add materialId if exists
-                if (this.displayOkMaterialId)
-                    formData.append('materialID', this.materialID)
+                if (this.displayOkMaterialId && this.materialID)
+                    formData.append('material_ID', this.materialID)
+                else
+                    formData.append('material_ID', 'no')
                 // log client message
                 for (var pair of formData.entries()) {
                     console.log(pair[0]+ ', ' + pair[1]); 
@@ -133,9 +135,9 @@ export default {
                 // post formData
                 const postUrl = 'http://localhost:5478/api/post_some_data';
                 axios.post(postUrl, formData, {headers: {
-                    "Content-Type": "multipart/form-data",
-                    }})
-                    .then((res) => {
+                    "Content-Type": "multipart/form-data"
+                    }}
+                    ).then((res) => {
                             console.log(res.status);
                             this.uploadMessage = "Datei erfolgreich hochgelanden";
                         }, (res) => {
@@ -147,14 +149,17 @@ export default {
         },
         checkExtension() {
             try {
-                if (this.dataFile.name && (this.includesExtension('.xlsx') || this.includesExtension('.csv'))) {
+                if (!this.dataFile.name) {
+                    this.uploadMessage = 'Keine Datei vorhanden!';
+                    return false;
+                }
+                if (this.includesExtension('.xlsx') || this.includesExtension('.csv')) {
                     this.uploadMessage = 'Senden...';
                     return true;
                 }
                 this.uploadMessage = 'Falsche Dateierweiterung!';
                 return false;
             } catch (err) {
-                this.uploadMessage = 'Keine Datei vorhanden!';
                 return false;
             }
         },
