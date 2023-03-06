@@ -70,16 +70,16 @@ export default {
     data() {
         return {
             dataFile: {} as File,
-            fileType: 'csv',
+            fileType: '',
             uploadMessage: 'Noch keine Datei ausgewählt',
             fileDelimiters: [{
-                    name: 'Semikolon',
-                    value: 'semicolon',
-                    id: 'delimiters-semicolon'
-                }, {
                     name: 'Komma',
                     value: 'comma',
                     id: 'delimiters-comma'
+                }, {
+                    name: 'Semikolon',
+                    value: 'semicolon',
+                    id: 'delimiters-semicolon'
                 }],
             decimalDelimiters: [{
                     name: 'Punkt',
@@ -91,7 +91,7 @@ export default {
                     id: 'decimals-comma'
                 }],
             fileConfiguration: {
-                delimiterPick: 'semicolon',
+                delimiterPick: 'comma',
                 decimalPick: 'point', 
             },
             materialOptions: ['Verpackung1', 'Verpackung2', 'Verpackung3'],
@@ -119,6 +119,7 @@ export default {
                 let formData = new FormData()
                 // add dataFile
                 formData.append('dataFile', this.dataFile) 
+                formData.append('fileType', this.fileType)
                 // add dataFile configuration
                 formData.append('dataDelimiter', this.fileConfiguration.delimiterPick)
                 formData.append('decimalDelimiter', this.fileConfiguration.decimalPick)
@@ -165,7 +166,10 @@ export default {
                 return false;
             }
             let ending = name.substring(n - m, n)
-            return (ending.valueOf() == ext.valueOf())
+            if (ending.valueOf() == ext.valueOf()) {
+                this.fileType = ext.valueOf()
+                return true
+            }
         },
         checkConfiguration() {
             if (this.fileConfiguration.decimalPick ==  this.fileConfiguration.delimiterPick) {
