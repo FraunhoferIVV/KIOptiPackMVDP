@@ -119,16 +119,13 @@ export default {
                 let formData = new FormData()
                 // add dataFile
                 formData.append('dataFile', this.dataFile) 
-                // extra formData for fileConfig
-                //let formDataConfig = new FormData()
+                // add dataFile configuration
                 formData.append('dataDelimiter', this.fileConfiguration.delimiterPick)
                 formData.append('decimalDelimiter', this.fileConfiguration.decimalPick)
-                // add fileConfig
-                //formData.append('fileConfig', "formDataConfig")
                 // add materialId if exists
                 if (this.displayOkMaterialId)
                     formData.append('materialID', this.materialID)
-                //
+                // log client message
                 for (var pair of formData.entries()) {
                     console.log(pair[0]+ ', ' + pair[1]); 
                 }
