@@ -131,7 +131,9 @@ export default {
                 }
                 // post formData
                 const postUrl = 'http://localhost:5478/api/post_some_data';
-                axios.post(postUrl, formData)
+                axios.post(postUrl, formData, {headers: {
+                    "Content-Type": "multipart/form-data",
+                    }})
                     .then((res) => {
                             console.log(res.status);
                             this.uploadMessage = "Datei erfolgreich hochgelanden";
@@ -144,7 +146,7 @@ export default {
         },
         checkExtension() {
             try {
-                if (this.dataFile.name && this.dataFile.name.includes('.xlsx') || this.dataFile.name.includes('.csv')) {
+                if (this.dataFile.name && (this.includesExtension('.xlsx') || this.includesExtension('.csv'))) {
                     this.uploadMessage = 'Senden...';
                     return true;
                 }
@@ -154,6 +156,16 @@ export default {
                 this.uploadMessage = 'Keine Datei vorhanden!';
                 return false;
             }
+        },
+        includesExtension(ext: String) {
+            let name = this.dataFile.name
+            let n = name.length
+            let m = ext.length
+            if (n < m) {
+                return false;
+            }
+            let ending = name.substring(n - m, n)
+            return (ending.valueOf() == ext.valueOf())
         },
         checkConfiguration() {
             if (this.fileConfiguration.decimalPick ==  this.fileConfiguration.delimiterPick) {
