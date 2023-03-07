@@ -6,7 +6,6 @@ import asyncio
 import logging
 import os
 import random
-from typing import Optional
 
 import pandas as pd
 
@@ -18,9 +17,12 @@ from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 
-from mvdp_services.frontend.UploadData import UploadData
+
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.uvicorn_server import UvicornAsyncServer
+
+import pymongo
+import fastiot.db.mongodb_helper_fn as mongodb_helper
 
 
 class FrontendService(FastIoTService):
@@ -72,7 +74,7 @@ class FrontendService(FastIoTService):
         return {"hello_world": "Good morning!",
                 "last_message": self.last_msg}
 
-    async def _handle_post(self, data_file: bytes = File(),
+    def _handle_post(self, data_file: bytes = File(),
                            file_type: str = Form(...),
                            data_delimiter: str = Form(...),
                            decimal_delimiter: str = Form(...),
@@ -85,17 +87,23 @@ class FrontendService(FastIoTService):
         """
 
         decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
-        data_delimiters = {'comma': ','}
+        data_delimiters = {'comma': ',', 'semicolon': ';'}
 
-        if file_type == '.csv':
-            data_frame = pd.read_csv(str(data_file),
-                                     sep=data_delimiters.get(data_delimiter, ","),
-                                     delimiter=decimal_delimiter)
-        if file_type == '.xlsx':
-            data_frame = pd.read_excel(data_file)
-
-        if data_frame is None:
+        try:
+            if file_type == '.csv':
+                data_frame = pd.read_csv(str(data_file),
+                                         sep=data_delimiters.get(data_delimiter, ","),
+                                         delimiter=decimal_delimiter)
+            if file_type == '.xlsx':
+                data_frame = pd.read_excel(data_file)
+        except:
             return "Fehler bei der Datenextraktion"
+
+        # TODO: Store in MongoDB, http://docs.dev.ivv-dd.fhg.de/fastiot/_latest/tutorials/part_2_building_services/06_database_services.html
+
+        mongodb_client = mongodb_helper.get_mongodb_client_from_env()
+        mongodb_client.insertOne()
+
 
         return "Datei erfolgreich hochgeladen"
 
