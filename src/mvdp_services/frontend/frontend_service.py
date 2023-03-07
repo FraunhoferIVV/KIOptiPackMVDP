@@ -5,7 +5,9 @@ Application logic for frontend service
 import asyncio
 import logging
 import os
-import random
+import io
+from datetime import datetime
+from tempfile import NamedTemporaryFile
 
 import pandas as pd
 
@@ -17,12 +19,12 @@ from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 
-
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.uvicorn_server import UvicornAsyncServer
 
 import pymongo
 import fastiot.db.mongodb_helper_fn as mongodb_helper
+import pprint
 
 
 class FrontendService(FastIoTService):
@@ -74,11 +76,11 @@ class FrontendService(FastIoTService):
         return {"hello_world": "Good morning!",
                 "last_message": self.last_msg}
 
-    def _handle_post(self, data_file: bytes = File(),
-                           file_type: str = Form(...),
-                           data_delimiter: str = Form(...),
-                           decimal_delimiter: str = Form(...),
-                           material_ID: str = Form(...)):
+    async def _handle_post(self, data_file: bytes = File(),
+                     file_type: str = Form(...),
+                     data_delimiter: str = Form(...),
+                     decimal_delimiter: str = Form(...),
+                     material_ID: str = Form(...)):
         """
         Simple handling of Post Request
 
@@ -91,28 +93,19 @@ class FrontendService(FastIoTService):
 
         try:
             if file_type == '.csv':
-                data_frame = pd.read_csv(str(data_file),
-                                         sep=data_delimiters.get(data_delimiter, ","),
-                                         delimiter=decimal_delimiter)
+                data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')))
+
             if file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
+
         except:
             return "Fehler bei der Datenextraktion"
 
-        # TODO: Store in MongoDB, http://docs.dev.ivv-dd.fhg.de/fastiot/_latest/tutorials/part_2_building_services/06_database_services.html
 
-        try:
-            mongodb_client = mongodb_helper.get_mongodb_client_from_env()
-            database = mongodb_client["experiments"]
-            collection = database[material_ID]
-
-            document = {'Hello': 'It is me'}
-            document = data_frame.to_dict()
-            # or extract data from the dictionary?
-
-            collection.insert_one(document)
-        except:
-            return "Fehler beim Speichern"
+        await self.broker_connection.publish(subject=Thing.get_subject("excel_importer"),
+                                             msg=Thing(machine="ExcelImporter",
+                                                       name="Test", value=0,
+                                                       timestamp=datetime.utcnow()))
 
         return "Datei erfolgreich hochgeladen"
 

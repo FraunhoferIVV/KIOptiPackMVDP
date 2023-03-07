@@ -3,4 +3,6 @@ infrastructure-services:
   mongodb:
   edc:
 
-services: {}
+services:
+  nats_logger:
+    image: fastiot/nats_logger
