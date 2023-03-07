@@ -139,9 +139,11 @@ export default {
                     }}
                     ).then((res) => {
                             console.log(res.status);
-                            this.uploadMessage = "Datei erfolgreich hochgelanden";
+                            console.log(res.data)
+                            this.uploadMessage = res.data
                         }, (res) => {
                             console.log(res.status);
+                            console.log(res.data)
                             this.uploadMessage = 'Fehler beim Hochladen';
                         })
             }
