@@ -93,7 +93,9 @@ class FrontendService(FastIoTService):
 
         try:
             if file_type == '.csv':
-                data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')))
+                data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
+                                         delimiter=data_delimiters.get(data_delimiter, ","),
+                                         decimal=decimal_delimiter)
 
             if file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
