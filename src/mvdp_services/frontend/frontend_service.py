@@ -101,9 +101,18 @@ class FrontendService(FastIoTService):
 
         # TODO: Store in MongoDB, http://docs.dev.ivv-dd.fhg.de/fastiot/_latest/tutorials/part_2_building_services/06_database_services.html
 
-        mongodb_client = mongodb_helper.get_mongodb_client_from_env()
-        mongodb_client.insertOne()
+        try:
+            mongodb_client = mongodb_helper.get_mongodb_client_from_env()
+            database = mongodb_client["experiments"]
+            collection = database[material_ID]
 
+            document = {'Hello': 'It is me'}
+            document = data_frame.to_dict()
+            # or extract data from the dictionary?
+
+            collection.insert_one(document)
+        except:
+            return "Fehler beim Speichern"
 
         return "Datei erfolgreich hochgeladen"
 
