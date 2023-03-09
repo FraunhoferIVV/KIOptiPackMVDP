@@ -100,15 +100,43 @@ class FrontendService(FastIoTService):
             if file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
 
+            # create translate function: attributes in thing -> attributes in data_frame
+            translate = {'machine': 'machine',
+                         'name': 'name',
+                         'measurement_id': 'material_ID',
+                         'timestamp': 'timestamp',
+                         'value': 'value',
+                         'unit': 'unit'}
+
+            # Is material_ID set?
+            if material_ID == 'no' and 'material_ID' in data_frame:
+                # material_ID not set <=> there is a column named material_ID
+                translate['measurement_id'] = 'material_ID'
+
+            # now assume material_ID set!
+            for index, thing_like in data_frame.iterrows():
+                thing = Thing(machine=thing_like[translate['machine']],
+                              name=thing_like[translate['name']],
+                              measurement_id=thing_like[translate['measurement_id']],
+                              timestamp=datetime.strptime(thing_like[translate['timestamp']],
+                                                          '%m/%d/%y %H:%M:%S'),
+                              value=thing_like[translate['value']])
+
+                await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
+                                                     msg=thing)
+
+
+
         except:
             return "Fehler bei der Datenextraktion"
 
 
+        """
         await self.broker_connection.publish(subject=Thing.get_subject("excel_importer"),
                                              msg=Thing(machine="ExcelImporter",
                                                        name="Test", value=0,
                                                        timestamp=datetime.utcnow()))
-
+        """
         return "Datei erfolgreich hochgeladen"
 
 
