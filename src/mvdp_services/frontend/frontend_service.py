@@ -104,23 +104,28 @@ class FrontendService(FastIoTService):
             translate = {'machine': 'machine',
                          'name': 'name',
                          'measurement_id': 'material_ID',
-                         'timestamp': 'timestamp',
-                         'value': 'value',
-                         'unit': 'unit'}
-
-            # Is material_ID set?
-            if material_ID == 'no' and 'material_ID' in data_frame:
-                # material_ID not set <=> there is a column named material_ID
-                translate['measurement_id'] = 'material_ID'
+                         'timestamp': 'timestamp'}
+            # add translation for value and unit if such columns exist
 
             # now assume material_ID set!
             for index, thing_like in data_frame.iterrows():
+                # must-have thing attributes
+                if material_ID == 'no' and 'material_ID' in data_frame:
+                    # material_ID not set <=> there is a column named material_ID
+                    measurement_id = thing_like[translate['measurement_id']]
+                else:
+                    # material_ID set => assign it to the thing
+                    measurement_id = material_ID
                 thing = Thing(machine=thing_like[translate['machine']],
                               name=thing_like[translate['name']],
-                              measurement_id=thing_like[translate['measurement_id']],
+                              measurement_id=measurement_id,
                               timestamp=datetime.strptime(thing_like[translate['timestamp']],
-                                                          '%m/%d/%y %H:%M:%S'),
-                              value=thing_like[translate['value']])
+                                                          '%m/%d/%y %H:%M:%S'))
+                # add optional thing attributes
+                if 'value' in translate.keys():
+                    thing.value = thing_like[translate['value']]
+                if 'unit' in translate.keys():
+                    thing.unit = thing_like[translate['unit']]
 
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
