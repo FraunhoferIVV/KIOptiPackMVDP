@@ -7,12 +7,11 @@ import logging
 import os
 import io
 from datetime import datetime
-from tempfile import NamedTemporaryFile
 
 import pandas as pd
 import json
 
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastiot.core import FastIoTService, subscribe, loop
 from fastiot.core.core_uuid import get_uuid
@@ -22,8 +21,6 @@ from starlette.middleware.cors import CORSMiddleware
 
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.uvicorn_server import UvicornAsyncServer
-
-
 
 
 class FrontendService(FastIoTService):
@@ -79,10 +76,10 @@ class FrontendService(FastIoTService):
         return json.dumps(['Option1', 'Option2'])
 
     async def _handle_post(self, data_file: bytes = File(),
-                     file_type: str = Form(...),
-                     data_delimiter: str = Form(...),
-                     decimal_delimiter: str = Form(...),
-                     material_ID: str = Form(...)):
+                           file_type: str = Form(...),
+                           data_delimiter: str = Form(...),
+                           decimal_delimiter: str = Form(...),
+                           material_ID: str = Form(...)):
         """
         Simple handling of Post Request
 
@@ -102,15 +99,14 @@ class FrontendService(FastIoTService):
             if file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
 
-
             # allowed column names (potenionally self. class attribute);
             # example below (assume at most 1 name exists)
             translate_options = {'machine': ['machine', 'Maschine'],
-                                'name': ['name', 'sensor'],
-                                'measurement_id': ['measurement_id', 'material_ID', 'material_id'],
-                                'value': ['value', 'result'],
-                                'timestamp': ['timestamp', 'time'],
-                                'unit': ['unit']}
+                                 'name': ['name', 'sensor'],
+                                 'measurement_id': ['measurement_id', 'material_ID', 'material_id'],
+                                 'value': ['value', 'result'],
+                                 'timestamp': ['timestamp', 'time'],
+                                 'unit': ['unit']}
 
             attributes = [column for column in data_frame]
 
@@ -123,10 +119,13 @@ class FrontendService(FastIoTService):
                         translate[thing_attribute] = attr
                         break
 
+            if material_ID == 'no' and 'material_ID' not in translate.keys():
+                return 'Es fehlt die Material-ID Angabe!'
+
             for index, thing_like in data_frame.iterrows():
                 # must-have thing attributes
-                if material_ID == 'no' and 'material_ID' in data_frame:
-                    # material_ID not set <=> there is a column named material_ID
+                if material_ID == 'no':
+                    # material_ID not set => there is a column named material_ID
                     measurement_id = thing_like[translate['measurement_id']]
                 else:
                     # material_ID set => assign it to the thing
@@ -146,8 +145,7 @@ class FrontendService(FastIoTService):
                                                      msg=thing)
 
         except:
-            return "Fehler bei der Datenextraktion"
-
+            return "Fehler bei der Datenextraktion!"
 
         """
         await self.broker_connection.publish(subject=Thing.get_subject("excel_importer"),
