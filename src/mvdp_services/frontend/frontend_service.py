@@ -100,12 +100,27 @@ class FrontendService(FastIoTService):
             if file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
 
-            # create translate function: attributes in thing -> attributes in data_frame
-            translate = {'machine': 'machine',
-                         'name': 'name',
-                         'measurement_id': 'material_ID',
-                         'timestamp': 'timestamp'}
-            # add translation for value and unit if such columns exist
+
+            # allowed column names (potenionally self. class attribute);
+            # example below (assume at most 1 name exists)
+            translate_options = {'machine': ['machine', 'Maschine'],
+                                'name': ['name', 'sensor'],
+                                'measurement_id': ['measurement_id', 'material_ID', 'material_id'],
+                                'value': ['value', 'result'],
+                                'timestamp': ['timestamp', 'time'],
+                                'unit': ['unit']}
+
+            attributes = [column for column in data_frame]
+
+            # create translate function from translate_options:
+            # attributes in thing -> attributes in data_frame
+            translate = {}
+            for thing_attribute in translate_options.keys():
+                for attr in attributes:
+                    if attr in translate_options[thing_attribute]:
+                        translate[thing_attribute] = attr
+                        break
+
 
             # now assume material_ID set!
             for index, thing_like in data_frame.iterrows():
