@@ -10,6 +10,7 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 import pandas as pd
+import json
 
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
@@ -22,9 +23,7 @@ from starlette.middleware.cors import CORSMiddleware
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.uvicorn_server import UvicornAsyncServer
 
-import pymongo
-import fastiot.db.mongodb_helper_fn as mongodb_helper
-import pprint
+
 
 
 class FrontendService(FastIoTService):
@@ -73,8 +72,11 @@ class FrontendService(FastIoTService):
 
     def _handle_get(self):
         """ Simple method to reply to a get request """
+        """
         return {"hello_world": "Good morning!",
                 "last_message": self.last_msg}
+        """
+        return json.dumps(['Option1', 'Option2'])
 
     async def _handle_post(self, data_file: bytes = File(),
                      file_type: str = Form(...),
@@ -121,8 +123,6 @@ class FrontendService(FastIoTService):
                         translate[thing_attribute] = attr
                         break
 
-
-            # now assume material_ID set!
             for index, thing_like in data_frame.iterrows():
                 # must-have thing attributes
                 if material_ID == 'no' and 'material_ID' in data_frame:
@@ -144,8 +144,6 @@ class FrontendService(FastIoTService):
 
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
-
-
 
         except:
             return "Fehler bei der Datenextraktion"
