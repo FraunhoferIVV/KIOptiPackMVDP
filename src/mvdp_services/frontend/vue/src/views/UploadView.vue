@@ -33,7 +33,7 @@
             <div class="file-upload__item dropdown form-group">
                 <label class="dropdown__description">Zugehörige Material-ID:
                     <div class="dropdown__body">
-                        <input class="dropdown__input form-control" list="materialID" name="materialID" v-model="materialID"/>
+                        <input class="dropdown__input form-control" list="materialID" name="materialID" v-model="materialID" @click="loadMaterialOptions"/>
                         <div class="dropdown__status">
                             <span v-if="displayOkMaterialId" class="dropdown__status--ok">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-bookmark-check" viewBox="0 0 16 16">
@@ -184,6 +184,19 @@ export default {
                 return false;
             }
             return true;
+        },
+        loadMaterialOptions() {
+            
+            const getUrl = 'http://localhost:5478/api/get_some_data';
+            // await not needed: client doesn't have to wait for server response with current options
+            axios.get(getUrl).
+                then((res) => {
+                    console.log(res.status)
+                    this.materialOptions = JSON.parse(res.data)
+                }, (res) => {
+                    console.log(res.status)
+                })
+            
         }
     }
 }
