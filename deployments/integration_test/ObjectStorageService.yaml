@@ -1,0 +1,5 @@
+search_index:
+ - "_timestamp"
+collection: 'thing'
+subject_name: 'thing.DataImporter'
+response_subject_name: 'objects'

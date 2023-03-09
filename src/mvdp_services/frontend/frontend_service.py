@@ -35,6 +35,9 @@ class FrontendService(FastIoTService):
         self.message_received = asyncio.Event()
         self.last_msg = None
 
+        # define machine for this frontend service
+        self.machine = "TEST_MACHINE"
+
     def _register_routes(self):
         self.app.add_middleware(
             CORSMiddleware,
@@ -73,13 +76,13 @@ class FrontendService(FastIoTService):
         return {"hello_world": "Good morning!",
                 "last_message": self.last_msg}
         """
-        return json.dumps(['Option1', 'Option2'])
+        return json.dumps(['id1', 'id2', 'id3'])
 
     async def _handle_post(self, data_file: bytes = File(),
                            file_type: str = Form(...),
                            data_delimiter: str = Form(...),
                            decimal_delimiter: str = Form(...),
-                           material_ID: str = Form(...)):
+                           material_id: str = Form(...)):
         """
         Simple handling of Post Request
 
@@ -90,69 +93,60 @@ class FrontendService(FastIoTService):
         decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
         data_delimiters = {'comma': ',', 'semicolon': ';'}
 
+        material_id = None if material_id == 'no' else material_id
         try:
             if file_type == '.csv':
                 data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
                                          delimiter=data_delimiters.get(data_delimiter, ","),
                                          decimal=decimal_delimiter)
-
-            if file_type == '.xlsx':
+            elif file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
+        except:
+            return "Could not import files"
 
-            # allowed column names (potenionally self. class attribute);
-            # example below (assume at most 1 name exists)
-            translate_options = {'machine': ['machine', 'Maschine'],
-                                 'name': ['name', 'sensor'],
-                                 'measurement_id': ['measurement_id', 'material_ID', 'material_id'],
-                                 'value': ['value', 'result'],
-                                 'timestamp': ['timestamp', 'time'],
-                                 'unit': ['unit']}
+        # information to use
 
-            attributes = [column for column in data_frame]
+        timestamp_in_table = 'Timestamp' in data_frame
+        if not material_id and not timestamp_in_table and "Material_ID" not in data_frame:
+            return "Es fehlen Material-ID und Timestamps"
 
-            # create translate function from translate_options:
-            # attributes in thing -> attributes in data_frame
-            translate = {}
-            for thing_attribute in translate_options.keys():
-                for attr in attributes:
-                    if attr in translate_options[thing_attribute]:
-                        translate[thing_attribute] = attr
-                        break
+        if timestamp_in_table:
+            try:
+                data_frame.Timestamp = pd.to_datetime(data_frame.Timestamp)
+            except (pd.ParseError, ValueError):
+                self._logger.warning("Could not parse datetimes. Leaving as string.")
 
-            if material_ID == 'no' and 'material_ID' not in translate.keys():
-                return 'Es fehlt die Material-ID Angabe!'
+        attributes = [column for column in data_frame
+                      if (column != 'Material_ID' and column != 'Timestamp')]
 
-            for index, thing_like in data_frame.iterrows():
-                # must-have thing attributes
-                if material_ID == 'no':
-                    # material_ID not set => there is a column named material_ID
-                    measurement_id = thing_like[translate['measurement_id']]
+        # create things from table
+        for index, row in data_frame.iterrows():
+            row = row.to_dict()  # This will make sure, we have python primitives like int and not np.int64
+            for attr in attributes:
+                measurement_id = material_id or row['Material_ID']
+
+                if timestamp_in_table:
+                    timestamp = row['Timestamp']
                 else:
-                    # material_ID set => assign it to the thing
-                    measurement_id = material_ID
-                thing = Thing(machine=thing_like[translate['machine']],
-                              name=thing_like[translate['name']],
-                              measurement_id=measurement_id,
-                              timestamp=datetime.strptime(thing_like[translate['timestamp']],
-                                                          '%m/%d/%y %H:%M:%S'))
-                # add optional thing attributes
-                if 'value' in translate.keys():
-                    thing.value = thing_like[translate['value']]
-                if 'unit' in translate.keys():
-                    thing.unit = thing_like[translate['unit']]
+                    timestamp = get_time_now()
 
+                # create thing
+                thing = Thing(machine=self.machine,
+                              name=attr,
+                              measurement_id=measurement_id,
+                              value=row[attr],
+                              timestamp=timestamp)
+                """
+                thing = Thing(machine=self.machine,
+                              name=attr,
+                              measurement_id=measurement_id,
+                              value=row[attr],
+                              timestamp=timestamp)
+                              # get unit after parsing the value in thing
+                """
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
 
-        except:
-            return "Fehler bei der Datenextraktion!"
-
-        """
-        await self.broker_connection.publish(subject=Thing.get_subject("excel_importer"),
-                                             msg=Thing(machine="ExcelImporter",
-                                                       name="Test", value=0,
-                                                       timestamp=datetime.utcnow()))
-        """
         return "Datei erfolgreich hochgeladen"
 
 
