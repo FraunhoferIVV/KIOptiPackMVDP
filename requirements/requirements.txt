@@ -1,4 +1,4 @@
-fastiot>=0.2.135,<1
+fastiot>=0.2.202,<1
 fastapi
 python-multipart
 aiofiles
