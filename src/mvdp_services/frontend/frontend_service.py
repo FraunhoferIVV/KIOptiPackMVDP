@@ -11,7 +11,7 @@ from datetime import datetime
 import pandas as pd
 import json
 
-from fastapi import FastAPI, File, Form
+from fastapi import FastAPI, File, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastiot.core import FastIoTService, subscribe, loop
 from fastiot.core.core_uuid import get_uuid
@@ -94,6 +94,7 @@ class FrontendService(FastIoTService):
         data_delimiters = {'comma': ',', 'semicolon': ';'}
 
         material_id = None if material_id == 'no' else material_id
+
         try:
             if file_type == '.csv':
                 data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
@@ -101,14 +102,18 @@ class FrontendService(FastIoTService):
                                          decimal=decimal_delimiter)
             elif file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
+                # value error bug (possibly tmp xlsx)
         except:
-            return "Could not import files"
+            raise HTTPException(status_code=500, detail='Could not parse the file!')
+
+        if len(data_frame.columns) <= 1:
+            raise HTTPException(status_code=500, detail='Potentially wrong configuration!')
 
         # information to use
 
         timestamp_in_table = 'Timestamp' in data_frame
         if not material_id and not timestamp_in_table and "Material_ID" not in data_frame:
-            return "Es fehlen Material-ID und Timestamps"
+            raise HTTPException(status_code=500, detail="No Material_ID and no Timestamp!")
 
         if timestamp_in_table:
             try:
@@ -136,18 +141,12 @@ class FrontendService(FastIoTService):
                               measurement_id=measurement_id,
                               value=row[attr],
                               timestamp=timestamp)
-                """
-                thing = Thing(machine=self.machine,
-                              name=attr,
-                              measurement_id=measurement_id,
-                              value=row[attr],
-                              timestamp=timestamp)
                               # get unit after parsing the value in thing
-                """
+
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
 
-        return "Datei erfolgreich hochgeladen"
+        return "File successfully uploaded"
 
 
 if __name__ == '__main__':
