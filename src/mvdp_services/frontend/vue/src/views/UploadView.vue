@@ -143,9 +143,9 @@ export default {
                 formData.append('decimal_delimiter', this.fileConfiguration.decimalPick)
                 // add materialId if exists
                 if (this.displayOkMaterialId && this.materialID)
-                    formData.append('material_ID', this.materialID)
+                    formData.append('material_id', this.materialID)
                 else
-                    formData.append('material_ID', 'no')
+                    formData.append('material_id', 'no')
                 // log client message
                 for (var pair of formData.entries()) {
                     console.log(pair[0]+ ', ' + pair[1]); 
