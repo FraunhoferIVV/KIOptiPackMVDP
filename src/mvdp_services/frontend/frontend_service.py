@@ -112,8 +112,8 @@ class FrontendService(FastIoTService):
         # information to use
 
         timestamp_in_table = 'Timestamp' in data_frame
-        if not material_id and not timestamp_in_table and "Material_ID" not in data_frame:
-            raise HTTPException(status_code=500, detail="No Material_ID and no Timestamp!")
+        if not material_id and "Material_ID" not in data_frame:
+            raise HTTPException(status_code=500, detail="No Material_ID!")
 
         if timestamp_in_table:
             try:
