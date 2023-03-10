@@ -1,14 +1,13 @@
 <template>
     <div class="file-upload">
-        <h1 class="file-upload__title">Hochladen einer XLSX- oder CSV-Datei</h1>
+        <h1 class="file-upload__title">Upload XLSX- or CSV-File</h1>
         <div class="file-upload__wrapper">
             <div class="file-upload__item form-group">
                 <input type="file" class="file-upload__input form-control" id="file-uploader" @change="readFile" />
-                <label for="file-uploader" class="file-upload__input-label">{{uploadMessage}}</label>
             </div>
             <div class="file-upload__item radio-list">
                 <div class="radio-list__item form-check" id="delimiter">
-                    <p class="radio-list__item-name">Trennzeichen</p>
+                    <p class="radio-list__item-name">Delimiter</p>
                     <div class="radio-field" v-for="(delim, ind) in fileDelimiters" :key="ind">
                         <input class="radio-field__input-circle form-check-input"
                             v-model="fileConfiguration.delimiterPick"
@@ -19,7 +18,7 @@
                     </div>
                 </div>
                 <div class="radio-list__item form-check" id="decimal">
-                    <p class="radio-list__item-name">Dezimaltrennzeichen</p>
+                    <p class="radio-list__item-name">Decimal delimiter</p>
                     <div class="radio-field" v-for="(delim, ind) in decimalDelimiters" :key="ind">
                         <input class="radio-field__input-circle form-check-input"
                             v-model="fileConfiguration.decimalPick"
@@ -31,7 +30,7 @@
                 </div>
             </div>
             <div class="file-upload__item dropdown form-group">
-                <label class="dropdown__description">Zugehörige Material-ID:
+                <label class="dropdown__description">Material_ID:
                     <div class="dropdown__body">
                         <input class="dropdown__input form-control" list="materialID" name="materialID" v-model="materialID" @click="loadMaterialOptions"/>
                         <div class="dropdown__status">
@@ -56,7 +55,8 @@
                 
             </div>
             <div class="file-upload__item">
-                <button class="file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Hochladen</button>
+                <button class="file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Upload</button>
+                <span class="file-upload__message" :class="uploadMessageClassObject">{{uploadMessage.content}}</span>
             </div>
         </div>
     </div>
@@ -71,22 +71,31 @@ export default {
         return {
             dataFile: {} as File,
             fileType: '',
-            uploadMessage: 'Noch keine Datei ausgewählt',
+            messageTypes: {
+                    info: 'info',
+                    error: 'error',
+                    warning: 'warning',
+                    success: 'success'
+                },
+            uploadMessage: {
+                content: 'Upload file not chosen!',
+                type: 'info'
+            },
             fileDelimiters: [{
-                    name: 'Komma',
+                    name: 'Comma',
                     value: 'comma',
                     id: 'delimiters-comma'
                 }, {
-                    name: 'Semikolon',
+                    name: 'Semicolon',
                     value: 'semicolon',
                     id: 'delimiters-semicolon'
                 }],
             decimalDelimiters: [{
-                    name: 'Punkt',
+                    name: 'Point',
                     value: 'point',
                     id: 'decimals-point'
                 }, {
-                    name: 'Komma',
+                    name: 'Comma',
                     value: 'comma',
                     id: 'decimals-comma'
                 }],
@@ -101,6 +110,13 @@ export default {
     computed: {
         displayOkMaterialId() {
             return this.materialID == '' || this.materialOptions.includes(this.materialID)
+        },
+        uploadMessageClassObject() {
+            return {
+                'file-upload__message--error': this.uploadMessage.type === this.messageTypes.error,
+                'file-upload__message--success': this.uploadMessage.type === this.messageTypes.success,
+                'file-upload__message--warning': this.uploadMessage.type === this.messageTypes.warning,
+            }
         }
     },
     methods: {
@@ -108,9 +124,11 @@ export default {
             try {
                 const target = event.target as HTMLInputElement;
                 this.dataFile = target.files![0]; // File Object
-                this.uploadMessage = '';
+                this.uploadMessage.content = '';
+                this.uploadMessage.type = this.messageTypes.info
             } catch (err) {
-                this.uploadMessage = 'Datei nicht gelesen';
+                this.uploadMessage.content = 'File not accepted!';
+                this.uploadMessage.type = this.messageTypes.warning
             }
         },
         submitFile() { 
@@ -140,11 +158,17 @@ export default {
                     ).then((res) => {
                             console.log(res.status);
                             console.log(res.data)
-                            this.uploadMessage = res.data
+                            this.uploadMessage.content = 'File successfully loaded'
+                            this.uploadMessage.type = this.messageTypes.success
                         }, (res) => {
                             console.log(res.status);
-                            console.log(res.data)
-                            this.uploadMessage = 'Fehler beim Hochladen';
+                            console.log(res.data);
+                            if (typeof res.data === 'undefined') {
+                                this.uploadMessage.content = 'Server connection error!'
+                                this.uploadMessage.type = this.messageTypes.warning;
+                            } else
+                                this.uploadMessage.content = JSON.parse(res.data);
+                            this.uploadMessage.type = this.messageTypes.error;
                         })
             }
 
@@ -152,16 +176,21 @@ export default {
         checkExtension() {
             try {
                 if (!this.dataFile.name) {
-                    this.uploadMessage = 'Keine Datei vorhanden!';
+                    this.uploadMessage.content = 'No file!';
+                    this.uploadMessage.type = this.messageTypes.warning;
                     return false;
                 }
                 if (this.includesExtension('.xlsx') || this.includesExtension('.csv')) {
-                    this.uploadMessage = 'Senden...';
+                    this.uploadMessage.content = 'Sending...';
+                    this.uploadMessage.type = this.messageTypes.info;
                     return true;
                 }
-                this.uploadMessage = 'Falsche Dateierweiterung!';
+                this.uploadMessage.content = 'Wrong extension!';
+                this.uploadMessage.type = this.messageTypes.warning;
                 return false;
             } catch (err) {
+                this.uploadMessage.content = 'Can not check extension'
+                this.uploadMessage.type = this.messageTypes.warning
                 return false;
             }
         },
@@ -180,7 +209,8 @@ export default {
         },
         checkConfiguration() {
             if (this.fileConfiguration.decimalPick ==  this.fileConfiguration.delimiterPick) {
-                this.uploadMessage = 'Nicht akzeptierbare Trennzeichenkonfiguration';
+                this.uploadMessage.content = 'Not acceptable delimiter configuration!';
+                this.uploadMessage.type = this.messageTypes.warning
                 return false;
             }
             return true;
@@ -195,6 +225,8 @@ export default {
                     this.materialOptions = JSON.parse(res.data)
                 }, (res) => {
                     console.log(res.status)
+                    this.uploadMessage.content = 'Can not load Material_ID hints!'
+                    this.uploadMessage.type = this.messageTypes.warning
                 })
             
         }
@@ -226,9 +258,21 @@ export default {
     .file-upload__input {
         width: 500px;
     }
-    .file-upload__input-label {
-        margin: 5px 0 0 5px;
-        font-size: 18px;
+    .file-upload__message {
+        margin: 20px;
+        font-size: 14px;
+    }
+
+    .file-upload__message--error {
+        color: red;
+    }
+
+    .file-upload__message--success {
+        color: green;
+    }
+
+    .file-upload__message--warning {
+        color: orangered;
     }
 
     .file-upload__submit-button {
