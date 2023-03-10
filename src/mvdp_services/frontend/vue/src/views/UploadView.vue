@@ -32,7 +32,7 @@
             <div class="file-upload__item dropdown form-group">
                 <label class="dropdown__description">Material_ID:
                     <div class="dropdown__body">
-                        <input class="dropdown__input form-control" list="materialID" name="materialID" v-model="materialID" @click="loadMaterialOptions"/>
+                        <input class="dropdown__input form-control" list="materialID" name="materialID" v-model="materialID"/>
                         <div class="dropdown__status">
                             <span v-if="displayOkMaterialId" class="dropdown__status--ok">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-bookmark-check" viewBox="0 0 16 16">
@@ -67,6 +67,9 @@
 import axios from 'axios';
 
 export default {
+    mounted() {
+        this.loadMaterialOptions()
+    },
     data() {
         return {
             dataFile: {} as File,
@@ -103,7 +106,7 @@ export default {
                 delimiterPick: 'comma',
                 decimalPick: 'point', 
             },
-            materialOptions: ['Verpackung1', 'Verpackung2', 'Verpackung3'],
+            materialOptions: [],
             materialID: ''
         }
     },
