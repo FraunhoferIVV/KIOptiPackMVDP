@@ -102,7 +102,7 @@ class FrontendService(FastIoTService):
                                          decimal=decimal_delimiter)
             elif file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
-                # value error bug (possibly tmp xlsx)
+
         except:
             raise HTTPException(status_code=500, detail='Could not parse the file!')
 
