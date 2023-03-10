@@ -165,17 +165,18 @@ export default {
                             console.log(res.data);
                             if (typeof res.data === 'undefined') {
                                 this.uploadMessage.content = 'Server connection error!'
-                                this.uploadMessage.type = this.messageTypes.warning;
-                            } else
+                                this.uploadMessage.type = this.messageTypes.error;
+                            } else {
                                 this.uploadMessage.content = JSON.parse(res.data);
-                            this.uploadMessage.type = this.messageTypes.error;
+                                this.uploadMessage.type = this.messageTypes.error;
+                            }
                         })
             }
 
         },
         checkExtension() {
             try {
-                if (!this.dataFile.name) {
+                if (!this.dataFile || !this.dataFile.name) {
                     this.uploadMessage.content = 'No file!';
                     this.uploadMessage.type = this.messageTypes.warning;
                     return false;
