@@ -156,19 +156,23 @@ export default {
                     "Content-Type": "multipart/form-data"
                     }}
                     ).then((res) => {
-                            console.log(res.status);
-                            console.log(res.data)
-                            this.uploadMessage.content = 'File successfully loaded'
+                            console.log(res)
+                            this.uploadMessage.content = 'File successfully uploaded'
                             this.uploadMessage.type = this.messageTypes.success
-                        }, (res) => {
-                            console.log(res.status);
-                            console.log(res.data);
-                            if (typeof res.data === 'undefined') {
-                                this.uploadMessage.content = 'Server connection error!'
+                        }, (error) => {
+                            console.log(error)
+                            if (error.code === 'ERR_NETWORK') {
+                                this.uploadMessage.content = 'Network error!'
+                                this.uploadMessage.type = this.messageTypes.error;
+                            } else if (error.code === 'ERR_BAD_REQUEST') {
+                                this.uploadMessage.content = 'Unprocessable message!'
+                                this.uploadMessage.type = this.messageTypes.error;
+                            } else if ('response' in error) {
+                                this.uploadMessage.content = error.response.data.detail;
                                 this.uploadMessage.type = this.messageTypes.error;
                             } else {
-                                this.uploadMessage.content = JSON.parse(res.data);
-                                this.uploadMessage.type = this.messageTypes.error;
+                                this.uploadMessage.content = 'Unknown Error!'
+                                this.uploadMessage.type = this.messageTypes.error
                             }
                         })
             }
@@ -222,10 +226,10 @@ export default {
             // await not needed: client doesn't have to wait for server response with current options
             axios.get(getUrl).
                 then((res) => {
-                    console.log(res.status)
+                    console.log(res)
                     this.materialOptions = JSON.parse(res.data)
-                }, (res) => {
-                    console.log(res.status)
+                }, (error) => {
+                    console.log(error)
                     this.uploadMessage.content = 'Can not load Material_ID hints!'
                     this.uploadMessage.type = this.messageTypes.warning
                 })
