@@ -16,3 +16,4 @@ src/fastiot/__version__.py
 /src/fastiot_sample_services/fastapi/static/
 fastiot.egg-info/
 generated/
+/src/mvdp_services/__init__.py
