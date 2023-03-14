@@ -49,7 +49,7 @@
                         </div>
                     </div>
                 </label>
-                <datalist id="materialID">
+                <datalist id="materialID" v-if="!displayOkMaterialId">
                     <option v-for="(option, ind) in materialOptions" :key="ind" :value="option"></option>
                 </datalist>
                 
@@ -106,13 +106,13 @@ export default {
                 delimiterPick: 'comma',
                 decimalPick: 'point', 
             },
-            materialOptions: [],
+            materialOptions: [] as String[],
             materialID: ''
         }
     },
     computed: {
         displayOkMaterialId() {
-            return this.materialID == '' || this.materialOptions.includes(this.materialID)
+            return this.materialOptions.includes(this.materialID)
         },
         uploadMessageClassObject() {
             return {
