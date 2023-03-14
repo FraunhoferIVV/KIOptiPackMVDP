@@ -145,7 +145,7 @@ export default {
                 formData.append('data_delimiter', this.fileConfiguration.delimiterPick)
                 formData.append('decimal_delimiter', this.fileConfiguration.decimalPick)
                 // add materialId if exists
-                if (this.displayOkMaterialId && this.materialID)
+                if (this.materialID)
                     formData.append('material_id', this.materialID)
                 else
                     formData.append('material_id', 'no')
