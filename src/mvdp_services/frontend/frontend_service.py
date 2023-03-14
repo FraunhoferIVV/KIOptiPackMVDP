@@ -131,7 +131,7 @@ class FrontendService(FastIoTService):
                 measurement_id = material_id or row['Material_ID']
 
                 if timestamp_in_table:
-                    timestamp = row['Timestamp']
+                    timestamp = row['Timestamp'].to_pydatetime()
                 else:
                     timestamp = get_time_now()
 
