@@ -90,40 +90,17 @@ class FrontendService(FastIoTService):
         s. https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter for more details
         """
 
-        decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
-        data_delimiters = {'comma': ',', 'semicolon': ';'}
+        data_frame, material_id = await self._parse_file(data_delimiter, data_file, decimal_delimiter, file_type,
+                                                         material_id)
+        timestamp_in_table = await self._data_frame_validation(data_frame, material_id)
 
-        material_id = None if material_id == 'no' else material_id
+        await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
 
-        try:
-            if file_type == '.csv':
-                data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
-                                         delimiter=data_delimiters.get(data_delimiter, ","),
-                                         decimal=decimal_delimiter)
-            elif file_type == '.xlsx':
-                data_frame = pd.read_excel(data_file)
+        return "File successfully uploaded"
 
-        except:
-            raise HTTPException(status_code=500, detail='Could not parse the file!')
-
-        if len(data_frame.columns) <= 1:
-            raise HTTPException(status_code=500, detail='Potentially wrong configuration!')
-
-        # information to use
-
-        timestamp_in_table = 'Timestamp' in data_frame
-        if not material_id and "Material_ID" not in data_frame:
-            raise HTTPException(status_code=500, detail="No Material_ID!")
-
-        if timestamp_in_table:
-            try:
-                data_frame.Timestamp = pd.to_datetime(data_frame.Timestamp)
-            except (pd.ParseError, ValueError):
-                self._logger.warning("Could not parse datetimes. Leaving as string.")
-
+    async def _data_frame_send_things(self, data_frame, material_id, timestamp_in_table):
         attributes = [column for column in data_frame
                       if (column != 'Material_ID' and column != 'Timestamp')]
-
         # create things from table
         for index, row in data_frame.iterrows():
             row = row.to_dict()  # This will make sure, we have python primitives like int and not np.int64
@@ -141,12 +118,41 @@ class FrontendService(FastIoTService):
                               measurement_id=measurement_id,
                               value=row[attr],
                               timestamp=timestamp)
-                              # get unit after parsing the value in thing
+                # get unit after parsing the value in thing
 
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
 
-        return "File successfully uploaded"
+    async def _data_frame_validation(self, data_frame, material_id):
+        if len(data_frame.columns) <= 1:
+            raise HTTPException(status_code=500, detail='Potentially wrong configuration!')
+        timestamp_in_table = 'Timestamp' in data_frame
+        material_id_exists = material_id or "Material_ID" in data_frame
+        if not material_id_exists or ("Material_ID" not in data_frame and "Timestamp" not in data_frame):
+            raise HTTPException(status_code=500, detail="No Material_ID or no Timestamp!")
+        if timestamp_in_table:
+            try:
+                data_frame.Timestamp = pd.to_datetime(data_frame.Timestamp)
+            except (pd.ParseError, ValueError):
+                raise HTTPException(status_code=500, detail="Could not parse datetimes")
+        return timestamp_in_table
+
+    async def _parse_file(self, data_delimiter, data_file, decimal_delimiter, file_type, material_id):
+        decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
+        data_delimiters = {'comma': ',', 'semicolon': ';'}
+        material_id = None if material_id == 'no' else material_id
+        try:
+            if file_type == '.csv':
+                data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
+                                         delimiter=data_delimiters.get(data_delimiter, ","),
+                                         decimal=decimal_delimiter)
+            elif file_type == '.xlsx':
+                data_frame = pd.read_excel(data_file)
+            else:
+                raise Exception('Unknown extension')
+        except:
+            raise HTTPException(status_code=500, detail='Could not parse the file!')
+        return data_frame, material_id
 
 
 if __name__ == '__main__':
