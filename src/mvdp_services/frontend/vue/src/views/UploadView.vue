@@ -56,7 +56,9 @@
             </div>
             <div class="file-upload__item">
                 <button class="file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Upload</button>
-                <span class="file-upload__message" :class="uploadMessageClassObject">{{uploadMessage.content}}</span>
+            </div>
+            <div class="file-upload__item">
+                <p class="file-upload__message" :class="uploadMessageClassObject">{{uploadMessage.content}}</p>
             </div>
         </div>
     </div>
@@ -135,7 +137,7 @@ export default {
             }
         },
         submitFile() { 
-            if (this.checkExtension() && this.checkConfiguration()) {
+            if (this.checkExtension() && (this.fileType == '.xlsx' || this.checkConfiguration())) {
                 // build post data
                 let formData = new FormData()
                 // add dataFile
@@ -165,10 +167,11 @@ export default {
                         }, (error) => {
                             console.log(error)
                             if (error.code === 'ERR_NETWORK') {
-                                this.uploadMessage.content = 'Network error!'
-                                this.uploadMessage.type = this.messageTypes.error;
-                            } else if (error.code === 'ERR_BAD_REQUEST') {
-                                this.uploadMessage.content = 'Unprocessable message!'
+                                this.uploadMessage.content = 'Network error!\n\n' +
+                                    'Possible reasons:\n' +
+                                    '1. No server connection\n' +
+                                    '2. file changed (refresh site)\n' +
+                                    '3. xlsx-file not valid (create file from your office software)'                  
                                 this.uploadMessage.type = this.messageTypes.error;
                             } else if ('response' in error) {
                                 this.uploadMessage.content = error.response.data.detail;
@@ -198,7 +201,7 @@ export default {
                 return false;
             } catch (err) {
                 this.uploadMessage.content = 'Can not check extension'
-                this.uploadMessage.type = this.messageTypes.warning
+                this.uploadMessage.type = this.messageTypes.error
                 return false;
             }
         },
@@ -214,6 +217,7 @@ export default {
                 this.fileType = ext.valueOf()
                 return true
             }
+            return false
         },
         checkConfiguration() {
             if (this.fileConfiguration.decimalPick ==  this.fileConfiguration.delimiterPick) {
@@ -267,8 +271,8 @@ export default {
         width: 500px;
     }
     .file-upload__message {
-        margin: 20px;
         font-size: 14px;
+        white-space: pre;
     }
 
     .file-upload__message--error {
