@@ -11,6 +11,7 @@ infrastructure_services:
     external: false
 name: full
 services:
+  data_provider: null
   frontend: null
 tag: ''
 version: 1

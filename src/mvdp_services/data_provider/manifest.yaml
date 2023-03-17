@@ -1,0 +1,5 @@
+fastiot-service:
+  name: data_provider
+
+  depends-on:
+    - nats
