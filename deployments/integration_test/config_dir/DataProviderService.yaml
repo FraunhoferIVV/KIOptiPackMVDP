@@ -1,0 +1,5 @@
+search_index:
+  - measurement_id, _timestamp
+  - name
+Asset_1: Sensor_A
+Asset_2: Sensor_A, Sensor_C
