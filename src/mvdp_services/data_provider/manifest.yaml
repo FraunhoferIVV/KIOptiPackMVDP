@@ -1,5 +1,9 @@
 fastiot-service:
   name: data_provider
 
+  ports: # List all ports of the module
+    - port: 5479
+      env_variable: "MVDP_DATA_PROVIDER_PORT"
+
   depends-on:
     - nats
