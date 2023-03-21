@@ -6,7 +6,7 @@ collection: 'thing'
 subject_name: 'thing.*'
 reply_subject_name: 'objects'
 enable_overwriting: true
-keys:
+identify_object_with:
  - "_timestamp"
  - "measurement_id"
  - "name"
