@@ -6,3 +6,5 @@ infrastructure-services:
 services:
   nats_logger:
     image: fastiot/nats_logger
+  object_storage:
+    image: fastiot/object_storage

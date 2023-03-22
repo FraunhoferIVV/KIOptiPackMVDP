@@ -1,24 +1,22 @@
 """
 Application logic for data_provider service
 """
-import os
 import asyncio
 import logging
-import random
-import pymongo
-import logging
 import time
+from typing import List
+
+import pandas as pd
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastiot.core import FastIoTService, Subject, subscribe, loop
-from fastiot.core.core_uuid import get_uuid
-from fastiot.core.time import get_time_now
+from fastiot.core import FastIoTService
 from fastiot.msg.thing import Thing
-# from fastiot_core_services.object_storage.mongodb_handler import MongoDBHandler
-from starlette.middleware.cors import CORSMiddleware
+from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
+from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
 from fastiot.util.read_yaml import read_config
+from starlette.middleware.cors import CORSMiddleware
+
 
 from mvdp_services.data_provider.env import env_data_provider
 from mvdp_services.data_provider.uvicorn_server import UvicornAsyncServer
@@ -29,19 +27,21 @@ class DataProviderService(FastIoTService):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # TODO: connect pipe input with a database, output with EDC
+        self.mongo_db_client = get_mongodb_client_from_env()
+        database = self.mongo_db_client.get_database(env_mongodb.name)
         """
         self._mongodb_handler = MongoDBHandler()
         database = self._mongodb_handler.get_database(env_mongodb.name)
         """
-
-        # maybe load asset from the database (db queries: Asset_x -> [column1, column2, ...])
+        #  potentially asset from the database (db queries: Asset_x -> [column1, column2, ...])
         service_config = read_config(self)
         if not service_config:
-            self._logger.error('Please set the assets config as shown in the documentation! Aborting service!')
+            self._logger.error('Please set the config as shown in the documentation! Aborting service!')
             time.sleep(10)
             raise RuntimeError
-        self.assets, mongo_indices = self._parse_config(service_config)
-        # self._create_index(mongo_indices)
+        self.mongodb_col = database.get_collection(service_config['collection'])
+        self._parse_config(service_config)
+        # self._create_index(self.mongo_indices)
 
         self.app = FastAPI()
         self._register_routes()
@@ -53,13 +53,12 @@ class DataProviderService(FastIoTService):
     def _register_routes(self):
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origin_regex='.*/assets/Asset_.*',
+            allow_origins=['*'],
             allow_credentials=True,
             allow_methods=['GET'],
             allow_headers=["*"],
         )
         self.app.get("/assets/Asset_{asset_id}")(self._handle_get)
-
         # no mounting apps at first
         """
         try:
@@ -71,15 +70,14 @@ class DataProviderService(FastIoTService):
             pass
         """
 
-
     def _parse_config(self, config):
-        mongo_indices = config.get('search_index', [])
-        assets = {}
+        self.mongo_indices = config.get('search_index', [])
+        self.assets = {}
         for attr, content in config.items():
             if attr.startswith('Asset_'):
-                assets[attr] = content.split(" ")
-        return assets, mongo_indices
+                self.assets[attr] = content.split(", ")
 
+    """
     def _create_index(self, mongo_indices):
         for index in mongo_indices:
             if "," in index:  # Build compound index
@@ -98,8 +96,7 @@ class DataProviderService(FastIoTService):
                 self._mongodb_handler.create_index(collection=self._mongo_object_db_col,
                                                    index=[(index, pymongo.ASCENDING)],
                                                    index_name=f"{index}_ascending")
-
-
+    """
 
     async def _start(self):
         """ Methods to start once the module is initialized """
@@ -109,34 +106,39 @@ class DataProviderService(FastIoTService):
         """ Methods to call on module shutdown """
         await self.server.down()
 
-    async def _handle_get(self, asset_id: str):
-       return asset_id
+    def _handle_get(self, asset_id: str):
+        asset_name = 'Asset_' + asset_id
+        query = {"name": {"$in": self.assets[asset_name]}}
+        result = self.mongodb_col.find(query)
+        # create list of things
+        things = list(map(from_mongo_data, result))
+        rows = self._things_to_rows(things, asset_name)
+        data_frame = pd.DataFrame.from_records(rows)
+        self._logger.debug('\n' + str(data_frame))
+        return data_frame.to_json()
 
-    """
-    @loop
-    async def produce(self):
-        # Creating some dummy data and publish it 
-        sensor_name = f'my_sensor_{random.randint(1, 5)}'
-        value = random.randint(20, 30)
-        subject = Thing.get_subject(sensor_name)
-        await self.broker_connection.publish(
-            subject=subject,
-            msg=Thing(
-                name=sensor_name,
-                machine='FastIoT_Example_Machine',
-                measurement_id=get_uuid(),
-                value=value,
-                timestamp=get_time_now()
-            )
-        )
-        self._logger.info("Published %d on sensor %s", value, subject.name)
-        return asyncio.sleep(2)
+    def _things_to_rows(self, things: List, asset_name):
+        # (timestamp, measurement_id) identifies row
+        # sort by (timestamp, measurement_id, name) ascending => row by row, columns sorted
+        things.sort(key=lambda thing: (thing['timestamp'], thing['measurement_id'], thing['name']))
+        columns = sorted(self.assets[asset_name])
+        rows = []
+        # possibly columns from different tables
+        key_now = (things[0]['timestamp'], things[0]['measurement_id'])
+        row_now = {'Timestamp': things[0]['timestamp'],
+                   'Material_ID': things[0]['measurement_id']}
+        for ind, thing in enumerate(things):
+            thing_key = (thing['timestamp'], thing['measurement_id'])
+            if thing_key != key_now:  # this thing is from new row
+                rows.append(row_now)  # push previous row
+                row_now = {'Timestamp': thing['timestamp'],
+                           'Material_ID': thing['measurement_id']}
+                key_now = thing_key
+            row_now[thing['name']] = str(thing['value']) + ' ' + str(thing['unit'])  # create new table cell
+        rows.append(row_now)  # push the last row
+        return rows
 
-    @subscribe(subject=Thing.get_subject('*'))
-    async def consume(self, topic: str, msg: Thing):
-        # Subscribing to `Thing.*` messages 
-        self._logger.info("%s: %s", topic, str(msg))
-    """
+
 
 
 if __name__ == '__main__':

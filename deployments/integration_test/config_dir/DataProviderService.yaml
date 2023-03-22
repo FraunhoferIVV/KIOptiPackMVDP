@@ -1,5 +1,7 @@
 search_index:
   - measurement_id, _timestamp
   - name
-Asset_1: Sensor_A
+collection: 'thing'
+subject_name: 'thing.*'
+Asset_1: Sensor_B
 Asset_2: Sensor_A, Sensor_C
