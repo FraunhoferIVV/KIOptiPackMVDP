@@ -102,13 +102,14 @@ class FrontendService(FastIoTService):
         # create things from table
         for index, row in data_frame.iterrows():
             row = row.to_dict()  # This will make sure, we have python primitives like int and not np.int64
+            row_timestamp = get_time_now()  # the same timestamp for each thing from row
             for attr in attributes:
                 measurement_id = material_id or row['Material_ID']
 
                 if timestamp_in_table:
                     timestamp = row['Timestamp'].to_pydatetime()
                 else:
-                    timestamp = get_time_now()
+                    timestamp = row_timestamp
 
                 # create thing
                 thing = Thing(machine=self.machine,
