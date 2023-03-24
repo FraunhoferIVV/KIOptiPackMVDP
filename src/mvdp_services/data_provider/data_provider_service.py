@@ -4,11 +4,11 @@ Application logic for data_provider service
 import asyncio
 import logging
 import time
-from typing import List
+from typing import List, Annotated
 
 import pandas as pd
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastiot.core import FastIoTService
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
@@ -35,7 +35,6 @@ class DataProviderService(FastIoTService):
             raise RuntimeError
         self.mongodb_col = database.get_collection(service_config['collection'])
         self._parse_config(service_config)
-        # self._create_index(self.mongo_indices)
 
         self.app = FastAPI()
         self._register_routes()
@@ -53,23 +52,57 @@ class DataProviderService(FastIoTService):
             allow_headers=["*"],
         )
         self.app.get("/assets/{asset_name}")(self._handle_get)
-        # no mounting apps at first
-        """
-        try:
-            self.app.mount("/",
-                           StaticFiles(directory=os.path.join(os.path.dirname(__file__), "vue", "dist"),
-                                       html=True),
-                           name="static")
-        except RuntimeError:
-            pass
-        """
+        # no mounting apps
 
     def _parse_config(self, config):
-        self.mongo_indices = config.get('search_index', [])
         self.assets = {}
-        for attr, content in config.items():
-            if attr.startswith('Asset_'):
-                self.assets[attr] = content.split(", ")
+        if 'assets' not in config.keys():
+            return
+        for asset in config['assets']:
+            asset_name = list(asset.keys())[0]
+            asset_content = asset[asset_name]
+            self.assets[asset_name] = {}
+            for asset_attr, asset_attr_content in asset_content.items():
+                if asset_attr == 'constraints':
+                    self.assets[asset_name]['constraints'] = (
+                        DataProviderService._calculate_constraints(asset_attr_content)
+                    )
+                else:
+                    self.assets[asset_name][asset_attr] = asset_attr_content
+
+    @staticmethod
+    def _calculate_constraints(constraints_object):
+        constraints = {}
+        for constraint_attr, constraint_content in constraints_object.items():
+            constraints[constraint_attr] = (
+                DataProviderService._calculate_single_constraint(constraint_attr, constraint_content)
+            )
+        return constraints
+
+    @staticmethod
+    def _calculate_single_constraint(attribute: str, constraint_values : list):
+        if not constraint_values:
+            return None
+        constraint = {
+            'intervals': [],
+            'values': []
+        }
+        if attribute == 'timestamp':  # include special datetime conversion
+            for item in constraint_values:
+                if isinstance(item, dict) and 'interval' in item.keys():
+                    constraint['intervals'].append((pd.Timestamp(item['interval']['start']).to_pydatetime(),
+                                                    pd.Timestamp(item['interval']['end']).to_pydatetime()))
+                else:
+                    constraint['values'].append(pd.Timestamp(item).to_pydatetime())
+        else:
+            for item in constraint_values:
+                if isinstance(item, dict) and 'interval' in item.keys():
+                    constraint['intervals'].append((item['interval']['start'],
+                                                    item['interval']['end']))
+                else:
+                    constraint['values'].append(item)
+        return constraint
+
 
     async def _start(self):
         """ Methods to start once the module is initialized """
@@ -79,18 +112,69 @@ class DataProviderService(FastIoTService):
         """ Methods to call on module shutdown """
         await self.server.down()
 
-    def _handle_get(self, asset_name: str):
+    def _handle_get(self, asset_name: str,
+                    material_id: list = Query([]),
+                    timestamp: list = Query([]),
+                    columns: list = Query([]),
+                    value: list = Query([]),
+                    unit: list = Query([]),
+                    machine: list = Query([])):
         if asset_name not in list(self.assets.keys()):
             raise HTTPException(status_code=500, detail='Asset not configured!')
-        query = {"name": {"$in": self.assets[asset_name]}}
-        result = self.mongodb_col.find(query)  # create list of things
+        # TODO: enable one bounded range constraints + certain time ago
+        # TODO: enable url interval queries
+        # create custom_query
+        custom_constraint_object = {
+            'machine': machine,
+            'measurement_id': material_id,
+            'timestamp': timestamp,
+            'name': columns,
+            'value': value,
+            'unit': unit
+        }
+        custom_constraints = DataProviderService._calculate_constraints(custom_constraint_object)
+        custom_query = DataProviderService._build_query(custom_constraints)
+        # create asset_query
+        asset_constraints = self.assets[asset_name].get('constraints', {})
+        asset_query = self._build_query(asset_constraints)
+        # create data_query (query intersection)
+        if custom_query or asset_query:
+            data_query = {"$and": [custom_query, asset_query]}
+        else:
+            data_query = {}
+        result = self.mongodb_col.find(data_query)  # create list of things
         things = list(map(from_mongo_data, result))
-        rows = self._things_to_rows(things)
+        rows = DataProviderService._things_to_rows(things)
         data_frame = pd.DataFrame.from_records(rows)
+        # sort columns and log the table
+        data_frame = data_frame[list(data_frame.columns.values)[:2] +
+                                sorted(list(data_frame.columns.values)[2:])]
         self._logger.debug('\n' + str(data_frame))
         return data_frame.to_json()
 
-    @ staticmethod
+    @staticmethod
+    def _build_query(constraints):
+        # TODO: fix types in queries (make compatible with database) + add url queries
+        query = {"$and": []}
+        conditions = []
+        for constraint_attr, constraint_content in constraints.items():
+            # prepare data
+            if not constraint_content:
+                continue
+            query_key = constraint_attr if constraint_attr != 'columns' else 'name'
+            # create query_value with query_key
+            query_value = {"$or": [
+                {query_key: {"$in": constraint_content['values']}}
+            ]}
+            for interval in constraint_content['intervals']:
+                query_value["$or"].append({query_key: {"$gte": interval[0], "$lte": interval[1]}})
+            # add query_key options to the query
+            conditions.append(query_value)
+        if conditions:
+            return {"$and": conditions}
+        return {}
+
+    @staticmethod
     def _things_to_rows(things: List):
         # empty list (exception state)
         if not things:
