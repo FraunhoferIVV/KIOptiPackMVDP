@@ -1,9 +1,0 @@
-fastiot>=0.2.202,<1
-fastapi
-python-multipart
-aiofiles
-uvicorn[standard]
-
-pandas
-openpyxl
-edc_management_client>=0.0.3
