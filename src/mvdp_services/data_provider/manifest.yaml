@@ -7,3 +7,6 @@ fastiot-service:
 
   depends-on:
     - nats
+
+  additional_requirements:
+    - webservice

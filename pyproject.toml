@@ -1,0 +1,50 @@
+# ATTENTION: Parts of this file are managed automatically!
+# This refers to build-system, project.version, tool and nuitka.
+
+[build-system]
+requires = [
+    "setuptools>=67",
+    "setuptools_scm[toml]>=6.2",
+    "wheel",
+]
+
+[project]
+name = "mvdp"
+version = "0.0.91"
+authors = [
+    { name = "tklaeger" },
+]
+description = ""
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastiot>=0.2.202,<1",
+    "pandas",
+    "openpyxl",
+]
+
+[project.optional-dependencies]
+webservice = [    "fastapi",
+    "python-multipart",
+    "edc_management_client>=0.0.3",
+    "aiofiles",
+    "uvicorn[standard]",
+]
+
+[tool.setuptools.packages.find]
+where = [
+    "src",
+]
+exclude = [
+    "mvdp_tests*",
+    "mvdp_services*",
+    "mvdp.egg-info*",
+]
+
+[nuitka]
+show-scons = false
+nofollow-import-to = [
+    "mvdp_tests*",
+    "mvdp_services*",
+    "mvdp.egg-info*",
+]
