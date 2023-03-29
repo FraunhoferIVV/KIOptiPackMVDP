@@ -9,6 +9,8 @@ import io
 import pandas as pd
 import json
 
+from typing import Optional
+
 from fastapi import FastAPI, File, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastiot.core import FastIoTService, subscribe, loop
@@ -70,17 +72,13 @@ class FrontendService(FastIoTService):
 
     def _handle_get(self):
         """ Simple method to reply to a get request """
-        """
-        return {"hello_world": "Good morning!",
-                "last_message": self.last_msg}
-        """
         return json.dumps(['id1', 'id2', 'id3'])
 
     async def _handle_post(self, data_file: bytes = File(),
                            file_type: str = Form(...),
                            data_delimiter: str = Form(...),
                            decimal_delimiter: str = Form(...),
-                           material_id: str = Form(...)):
+                           material_id: Optional[str] = Form(None)):
         """
         Simple handling of Post Request
 
@@ -88,12 +86,9 @@ class FrontendService(FastIoTService):
         s. https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter for more details
         """
 
-        data_frame, material_id = await self._parse_file(data_delimiter, data_file, decimal_delimiter, file_type,
-                                                         material_id)
-        timestamp_in_table = await self._data_frame_validation(data_frame, material_id)
-
+        data_frame = self._parse_file(data_delimiter, data_file, decimal_delimiter, file_type)
+        timestamp_in_table = self._data_frame_validation(data_frame, material_id)
         await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
-
         return "File successfully uploaded"
 
     async def _data_frame_send_things(self, data_frame, material_id, timestamp_in_table):
@@ -122,7 +117,7 @@ class FrontendService(FastIoTService):
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
 
-    async def _data_frame_validation(self, data_frame, material_id):
+    def _data_frame_validation(self, data_frame, material_id):
         if len(data_frame.columns) <= 1:
             raise HTTPException(status_code=500, detail='Potentially wrong configuration!')
         timestamp_in_table = 'Timestamp' in data_frame
@@ -136,10 +131,9 @@ class FrontendService(FastIoTService):
                 raise HTTPException(status_code=500, detail="Could not parse datetimes")
         return timestamp_in_table
 
-    async def _parse_file(self, data_delimiter, data_file, decimal_delimiter, file_type, material_id):
+    def _parse_file(self, data_delimiter, data_file, decimal_delimiter, file_type):
         decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
         data_delimiters = {'comma': ',', 'semicolon': ';'}
-        material_id = None if material_id == 'no' else material_id
         try:
             if file_type == '.csv':
                 data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
@@ -151,7 +145,7 @@ class FrontendService(FastIoTService):
                 raise Exception('Unknown extension')
         except:
             raise HTTPException(status_code=500, detail='Could not parse the file!')
-        return data_frame, material_id
+        return data_frame
 
 
 if __name__ == '__main__':

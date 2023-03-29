@@ -149,8 +149,6 @@ export default {
                 // add materialId if exists
                 if (this.materialID)
                     formData.append('material_id', this.materialID)
-                else
-                    formData.append('material_id', 'no')
                 // log client message
                 for (var pair of formData.entries()) {
                     console.log(pair[0]+ ', ' + pair[1]); 
