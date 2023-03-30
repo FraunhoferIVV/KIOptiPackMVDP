@@ -4,7 +4,7 @@ Application logic for data_provider service
 import asyncio
 import logging
 import time
-from typing import List, Annotated
+from typing import List
 
 import pandas as pd
 

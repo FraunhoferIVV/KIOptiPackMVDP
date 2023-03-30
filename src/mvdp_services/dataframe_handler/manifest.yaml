@@ -1,0 +1,12 @@
+fastiot-service:
+  name: dataframe_handler
+
+  ports: # List all ports of the module
+    - port: 5480
+      env_variable: "MVDP_DATAFRAME_HANDLER_PORT"
+
+  depends-on:
+    - nats
+
+  additional_requirements:
+    - webservice

@@ -12,6 +12,7 @@ infrastructure_services:
 name: full
 services:
   data_provider: null
+  dataframe_handler: null
   frontend: null
 tag: ''
 version: 1
