@@ -25,7 +25,7 @@ class DataSpaceUploader:
         self._upload_dataframe(material_id, values)
 
     def _upload_dataframe(self, material_id, dataframe: DataFrame):
-        post_url = "http://0.0.0.0:5480"
+        post_url = "http://0.0.0.0:5480/machine_upload"
         df_columns = DataSpaceUploader._reduce_dataframe(dataframe)
         post_batches = []
         for column in df_columns:
@@ -37,11 +37,12 @@ class DataSpaceUploader:
                 "content": batch.to_json()
             }
             self._logger.debug("Message:" + str(msg))
-            # rq.post(post_url, msg)
+            response = rq.post(url=post_url, data=msg)
+            self._logger.debug("Response:" + response.text)
 
     @staticmethod
     def _reduce_dataframe(dataframe: DataFrame):
-        columns_dfs = map(DataSpaceUploader._reduce_columns, [dataframe[col] for col in dataframe])
+        columns_dfs = [DataSpaceUploader._reduce_columns(dataframe[col]) for col in dataframe]
         return columns_dfs
 
     @staticmethod
@@ -54,33 +55,10 @@ class DataSpaceUploader:
         column = DataFrame(column).drop(same_value_indices)
         return column
 
-    """
-    def upload(self, material_id: str, parameters: DataFrame, values: DataFrame):
-        post_url = "http://0.0.0.0:5480"
-        post_object = self._create_post_object(material_id, parameters, values)
-        try:
-            response = rq.post(post_url, post_object)
-        except Exception as e:
-            self._logger.error(e)
-            raise Exception("Sending error")
-        self._logger.debug(response)
-        return response
-
-    def _create_post_object(self, material_id: str, parameters: DataFrame, values: DataFrame):
-        return {
-            "config": {
-                "server": self.server
-            },
-            "parameters": parameters.to_json(),
-            "values": values.to_json()
-        }
-    """
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     dsu = DataSpaceUploader("543")
     dsu.set_max_pos_len(20)
     df = pd.read_excel("/home/drobitko/Downloads/Protokoll_MotiV.xlsx")
-    res = dsu.upload("722", df, DataFrame())
-    print(res)
+    dsu.upload("722", df[["Name", "Parameter", "Werte"]], DataFrame())
