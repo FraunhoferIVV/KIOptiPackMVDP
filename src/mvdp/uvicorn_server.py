@@ -5,12 +5,13 @@ from typing import Optional, List
 try:
     from uvicorn import Server, Config
 except ImportError:  # We mock some stuff for the following code not to fail
-    class UvicornServer:
-        pass
+    class Server:
+        def __init__(self, *args, **kwargs):
+            pass
 
 
     class Config:
-        def __init__(self, **kwargs):
+        def __init__(self, *args, **kwargs):
             pass
 
 
