@@ -87,7 +87,8 @@ class FrontendService(FastIoTService):
         """
 
         data_frame = self._parse_file(data_delimiter, data_file, decimal_delimiter, file_type)
-        timestamp_in_table = self._data_frame_validation(data_frame, material_id)
+        timestamp_in_table = 'Timestamp' in data_frame
+        self._data_frame_validation(data_frame, material_id, timestamp_in_table)
         await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
         return "File successfully uploaded"
 
@@ -117,10 +118,9 @@ class FrontendService(FastIoTService):
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
 
-    def _data_frame_validation(self, data_frame, material_id):
+    def _data_frame_validation(self, data_frame, material_id, timestamp_in_table):
         if len(data_frame.columns) <= 1:
             raise HTTPException(status_code=500, detail='Potentially wrong configuration!')
-        timestamp_in_table = 'Timestamp' in data_frame
         material_id_exists = material_id or "Material_ID" in data_frame
         if not material_id_exists or ("Material_ID" not in data_frame and "Timestamp" not in data_frame):
             raise HTTPException(status_code=500, detail="No Material_ID or no Timestamp!")
