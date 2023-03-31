@@ -1,0 +1,156 @@
+{
+"asset":
+	{
+	"properties":
+		{
+		"asset:prop:name":"test",
+		"asset:prop:version":"1.0",
+		"asset:prop:id":"DatasetTest",
+		"asset:prop:contenttype":"text/plain"
+		}
+	},
+"dataAddress":
+	{
+	"properties":
+		{
+		"type":"AzureStorage",
+		"account":"",
+		"container":"src-container",
+		"blobname":"",
+		"keyName":"-key1"
+		}
+	}
+}
+
+
+
+
+
+
+{
+"policy":
+	{
+	"type":"SET",
+	"permissions":[
+		{
+		"edctype":"dataspaceconnector:permission",
+		"uid":null,
+		"target":null,
+		"action":
+			{
+			"type":"USE",
+			"includedIn":null,
+			"constraint":null
+			},
+		"assignee":null,
+		"assigner":null,
+		"constraints":[
+			{
+			"edctype":"AtomicConstraint",
+			"leftExpression":
+				{
+				"edctype":"dataspaceconnector:literalexpression",
+				"value":"ids:absoluteSpatialPosition"
+				},
+			"rightExpression":
+				{
+				"edctype":"dataspaceconnector:literalexpression",
+				"value":"eu"
+				},
+			"operator":"EQ"
+			}],
+			"duties":[]
+		}]
+	},
+	"id":"PolicyTest"
+}
+
+
+
+{
+	"id":"ContractTest",
+	"criteria": [
+		{
+		"operandLeft":"asset:prop:id",
+		"operator":"in",
+		"operandRight": [
+			"test-document-2_company1"
+			]
+		}],
+	"accessPolicyId":"6a99c1bb-74ad-41a7-b73a-93233ffdbfb8",
+	"contractPolicyId":"6a99c1bb-74ad-41a7-b73a-93233ffdbfb8"
+}
+
+
+
+{
+	"id":"ContractTest2",
+	"criteria": [
+		{
+		"operandLeft":"asset:prop:id",
+		"operator":"in",
+		"operandRight": [
+			"test-document-2_company1",
+			"test-document_company1"
+			]
+		}],
+	"accessPolicyId":"6a99c1bb-74ad-41a7-b73a-93233ffdbfb8",
+	"contractPolicyId":"6a99c1bb-74ad-41a7-b73a-93233ffdbfb8"
+}
+
+
+
+{
+	"connectorAddress":"http://company2:8282/api/v1/ids/data",
+	"offer":
+		{
+		"offerId":"8dfd8f18-09ad-41f9-a2d8-368889d3e36e:67173e7b-2185-4157-afaa-d15ba029ba99",
+		"assetId":"test-document-2_company2",
+		"policy":
+		{
+			"permissions": [
+				{
+				"edctype":"dataspaceconnector:permission",
+				"uid":null,
+				"target":"test-document-2_company2",
+				"action": 
+					{
+					"type":"USE",
+					"includedIn":null,
+					"constraint":null
+					},
+				"assignee":null,
+				"assigner":null,
+				"constraints": [
+					{
+					"edctype":"AtomicConstraint",
+					"leftExpression":
+						{
+						"edctype":"dataspaceconnector:literalexpression",
+						"value":"ids:absoluteSpatialPosition"
+						},
+					"rightExpression":
+						{
+						"edctype":"dataspaceconnector:literalexpression",
+						"value":"eu"
+						},
+					"operator":"EQ"
+					}],
+				"duties":[]
+				}],
+			"prohibitions":[],
+			"obligations":[],
+			"extensibleProperties":{},
+			"inheritsFrom":null,
+			"assigner":null,
+			"assignee":null,
+			"target":"test-document-2_company2",
+			"@type":
+				{
+				"@policytype":"set"
+				}
+			}
+		},
+	"connectorId":"yomama",
+	"protocol":"ids-multipart"
+}

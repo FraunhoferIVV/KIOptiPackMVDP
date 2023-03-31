@@ -1,0 +1,28 @@
+Commands on Provider Side:
+
+Asset Definition: 
+curl -X POST -H "Content-Type: application/json" -H 'X-Api-Key: password' -d @localFiles/baseProvider/assetDef.json "http://10.62.13.226:8182/api/v1/management/assets"
+curl -X GET -H 'X-Api-Key: password' "http://localhost:8182/api/v1/management/assets"
+curl -X GET -H 'X-Api-Key: password' "http://localhost:8182/api/v1/management/assets/DatasetTest"
+
+Policy Definition:  
+curl -X POST -H "Content-Type: application/json" -H 'X-Api-Key: password' -d @localFiles/baseProvider/policyDef.json "http://10.62.13.226:8182/api/v1/management/policydefinitions"
+curl -X GET -H 'X-Api-Key: password' "http://localhost:8182/api/v1/management/policydefinitions"   
+curl -X GET -H 'X-Api-Key: password' "http://localhost:8182/api/v1/management/policydefinitions/PolicyTest"
+
+Contract Definition:
+curl -X POST -H "Content-Type: application/json" -H 'X-Api-Key: password' -d @localFiles/baseProvider/contractDef.json "http://10.62.13.226:8182/api/v1/management/contractdefinitions"
+curl -X GET -H 'X-Api-Key: password' "http://localhost:8182/api/v1/management/contractdefinitions"
+curl -X GET -H 'X-Api-Key: password' "http://localhost:8182/api/v1/management/contractdefinitions/ContractTest"
+
+
+Commands on Consumer Side:
+
+Contract Negotiation:
+curl -X POST -H "Content-Type: application/json" -H 'X-Api-Key: password' -d @localFiles/baseProvider/testNegotiation.json "http://10.62.13.227:8182/api/v1/management/contractnegotiations"
+curl -X GET -H 'X-Api-Key: password' "http://10.62.13.227:8182/api/v1/management/contractnegotiations"
+
+Contract Agreement:
+curl -X GET -H 'X-Api-Key: password' "http://10.62.13.227:8182/api/v1/management/contractagreements"
+
+Transfer Process:
