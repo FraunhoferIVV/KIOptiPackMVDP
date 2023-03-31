@@ -18,7 +18,7 @@ class DataSpaceUploader:
         Instantiate data space uploader
         :param server:
         """
-        self.server = server  # Todo: Define http://server:port/something? What parts do we want?
+        self.post_url = f"http://{server}:{env_dataframe_handler.fastapi_port}/machine_upload"
         self.max_post_len = int(1e3)
         self._logger = logging.getLogger('data_space_uploader')
 
@@ -30,15 +30,22 @@ class DataSpaceUploader:
 
     def upload(self, material_id: str, parameters: DataFrame, values: Optional[DataFrame] = None):
 
-        # Todo: Check if sensor does not have same name as any parameter.
+        # make sure all series are dfs
+        if not isinstance(parameters, DataFrame):
+            parameters = DataFrame(parameters)
+        if not isinstance(values, DataFrame):
+            values = DataFrame(values)
+
+        # Check if sensor does not have same name as any parameter
+        DataSpaceUploader._dataframes_validation(parameters, values)
 
         self._upload_dataframe(material_id, DataFrameType.parameters,
-                               DataFrame(parameters))  # make sure all series are dfs
-        if values:
-            self._upload_dataframe(material_id, DataFrameType.values, DataFrame(values))
+                               parameters)
+        if values is None:
+            self._upload_dataframe(material_id, DataFrameType.values,
+                                   values)
 
     def _upload_dataframe(self, material_id, df_type, dataframe: DataFrame):
-        post_url = f"http://{self.server}:{env_dataframe_handler.fastapi_port}/machine_upload"  # Todo: Port handling!
         df_columns = DataSpaceUploader._reduce_dataframe(dataframe)
         post_batches = []
         for column in df_columns:
@@ -52,11 +59,20 @@ class DataSpaceUploader:
             }
             self._logger.debug("Message:" + str(msg))
             try:
-                response = rq.post(url=post_url, data=msg)
+                response = rq.post(url=self.post_url, data=msg)
             except Exception as e:
                 self._logger.error(e)
-                raise Exception("Sending error")
+                raise Exception("Sending error!")
             self._logger.debug("Response:" + response.text)
+
+    @staticmethod
+    def _dataframes_validation(parameters, values):
+        unique_params = set()
+        for index, row in parameters.iterrows():
+            for attr in parameters:
+                unique_params.add(row[attr])
+        if bool(unique_params & set(values.columns)):
+            raise Exception("Values can't have common names with parameters!")
 
     @staticmethod
     def _reduce_dataframe(dataframe: DataFrame):
@@ -76,7 +92,7 @@ class DataSpaceUploader:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    dsu = DataSpaceUploader("543")
+    dsu = DataSpaceUploader("localhost")
     dsu.set_max_pos_len(20)
     df = pd.read_excel("/home/drobitko/Downloads/Protokoll_MotiV.xlsx")
     dsu.upload("722", df[["Name", "Parameter"]], df["Werte"])
