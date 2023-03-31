@@ -14,9 +14,10 @@ class TestUploadingAssets(unittest.TestCase):
         populate_test_env()
 
         config = edc.Configuration()
-        config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port}/api"
+        config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port_2}/api/v1"
         config.verify_ssl = False
         config.debug = True
+        config.api_key = 'password'
 
         self.api_client = edc.ApiClient(config)
 
@@ -26,7 +27,7 @@ class TestUploadingAssets(unittest.TestCase):
         result = edc.HealthStatus(raw_result[0])
         self.assertEqual(result.is_system_healthy, None)
 
-    @unittest.skip("Currently returns error 404")
+    #@unittest.skip("Currently returns error 404")
     def test_upload(self):
         asset_api_instance = edc.AssetApi(self.api_client)
 
