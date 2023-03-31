@@ -41,7 +41,7 @@ class DataSpaceUploader:
         DataSpaceUploader._dataframes_validation(parameters, values)
 
         self._upload_dataframe(material_id, parameters)
-        if values is None:
+        if values is not None:
             self._upload_dataframe(material_id, values)
 
     def _upload_dataframe(self, material_id, dataframe: DataFrame):
