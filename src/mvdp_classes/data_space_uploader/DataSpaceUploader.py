@@ -1,28 +1,28 @@
 import logging
-import json
 
 import numpy as np
 import requests as rq
 import pandas as pd
+
 from pandas import DataFrame
 
 
 class DataSpaceUploader:
 
     def __init__(self, server: str):
-        self._logger = logging.getLogger('data_space_uploader')
         self.server = server
-        self.max_post_len = int(1e4)
+        self.max_post_len = int(1e3)
+        self._logger = logging.getLogger('data_space_uploader')
 
     def set_max_pos_len(self, max_post_len: int):
         if max_post_len < 10:
-            self._logger.error("Too small maximal post message length. New value not set")
+            self._logger.error("Too small post message length limit. New value not set")
             return
         self.max_post_len = max_post_len
 
     def upload(self, material_id: str, parameters: DataFrame, values: DataFrame):
-        self._upload_dataframe(material_id, parameters)
-        self._upload_dataframe(material_id, values)
+        self._upload_dataframe(material_id, DataFrame(parameters))  # make sure all series are dfs
+        self._upload_dataframe(material_id, DataFrame(values))
 
     def _upload_dataframe(self, material_id, dataframe: DataFrame):
         post_url = "http://0.0.0.0:5480/machine_upload"
@@ -50,7 +50,7 @@ class DataSpaceUploader:
         same_value_indices = []
         items = list(column.items())
         for index, row in items[1:]:
-            if row == items[index - 1][1]:
+            if row == items[index - 1][1]:  # check if the row equals the previous row
                 same_value_indices.append(index)
         column = DataFrame(column).drop(same_value_indices)
         return column
@@ -61,4 +61,4 @@ if __name__ == '__main__':
     dsu = DataSpaceUploader("543")
     dsu.set_max_pos_len(20)
     df = pd.read_excel("/home/drobitko/Downloads/Protokoll_MotiV.xlsx")
-    dsu.upload("722", df[["Name", "Parameter", "Werte"]], DataFrame())
+    dsu.upload("722", df[["Name", "Parameter"]], df["Werte"])
