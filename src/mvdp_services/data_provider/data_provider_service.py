@@ -7,7 +7,6 @@ import time
 from typing import List
 
 import pandas as pd
-
 from fastapi import FastAPI, HTTPException, Query
 from fastiot.core import FastIoTService
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
@@ -18,7 +17,6 @@ from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.data_provider.env import env_data_provider
-from mvdp_services.data_provider.uvicorn_server import UvicornAsyncServer
 
 
 class DataProviderService(FastIoTService):

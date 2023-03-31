@@ -21,7 +21,6 @@ from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.frontend.env import env_frontend
-from mvdp_services.frontend.uvicorn_server import UvicornAsyncServer
 
 
 class FrontendService(FastIoTService):

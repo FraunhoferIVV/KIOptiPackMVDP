@@ -6,8 +6,6 @@ import asyncio
 import logging
 
 import pandas as pd
-
-from pandas import DataFrame
 from fastapi import FastAPI, Form
 from fastiot.core import FastIoTService
 from fastiot.core.time import get_time_now
@@ -16,6 +14,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.dataframe_handler.TableThing import TableThing
+from mvdp_services.dataframe_handler.env import env_dataframe_handler
 
 
 class DataframeHandlerService(FastIoTService):

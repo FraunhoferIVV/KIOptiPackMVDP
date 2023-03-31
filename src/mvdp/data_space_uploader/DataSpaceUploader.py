@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import numpy as np
 import requests as rq
@@ -6,11 +7,18 @@ import pandas as pd
 
 from pandas import DataFrame
 
+from mvdp.data_space_uploader.constants import DataFrameType
+from mvdp_services.dataframe_handler.env import env_dataframe_handler
+
 
 class DataSpaceUploader:
 
     def __init__(self, server: str):
-        self.server = server
+        """
+        Instantiate data space uploader
+        :param server:
+        """
+        self.server = server  # Todo: Define http://server:port/something? What parts do we want?
         self.max_post_len = int(1e3)
         self._logger = logging.getLogger('data_space_uploader')
 
@@ -20,12 +28,17 @@ class DataSpaceUploader:
             return
         self.max_post_len = max_post_len
 
-    def upload(self, material_id: str, parameters: DataFrame, values: DataFrame):
-        self._upload_dataframe(material_id, "parameters", DataFrame(parameters))  # make sure all series are dfs
-        self._upload_dataframe(material_id, "values", DataFrame(values))
+    def upload(self, material_id: str, parameters: DataFrame, values: Optional[DataFrame] = None):
+
+        # Todo: Check if sensor does not have same name as any parameter.
+
+        self._upload_dataframe(material_id, DataFrameType.parameters,
+                               DataFrame(parameters))  # make sure all series are dfs
+        if values:
+            self._upload_dataframe(material_id, DataFrameType.values, DataFrame(values))
 
     def _upload_dataframe(self, material_id, df_type, dataframe: DataFrame):
-        post_url = "http://0.0.0.0:5480/machine_upload"
+        post_url = f"http://{self.server}:{env_dataframe_handler.fastapi_port}/machine_upload"  # Todo: Port handling!
         df_columns = DataSpaceUploader._reduce_dataframe(dataframe)
         post_batches = []
         for column in df_columns:
