@@ -21,10 +21,10 @@ class DataSpaceUploader:
         self.max_post_len = max_post_len
 
     def upload(self, material_id: str, parameters: DataFrame, values: DataFrame):
-        self._upload_dataframe(material_id, DataFrame(parameters))  # make sure all series are dfs
-        self._upload_dataframe(material_id, DataFrame(values))
+        self._upload_dataframe(material_id, "parameters", DataFrame(parameters))  # make sure all series are dfs
+        self._upload_dataframe(material_id, "values", DataFrame(values))
 
-    def _upload_dataframe(self, material_id, dataframe: DataFrame):
+    def _upload_dataframe(self, material_id, df_type, dataframe: DataFrame):
         post_url = "http://0.0.0.0:5480/machine_upload"
         df_columns = DataSpaceUploader._reduce_dataframe(dataframe)
         post_batches = []
@@ -34,10 +34,15 @@ class DataSpaceUploader:
         for batch in post_batches:
             msg = {
                 "material_id": material_id,
+                "df_type": df_type,
                 "content": batch.to_json()
             }
             self._logger.debug("Message:" + str(msg))
-            response = rq.post(url=post_url, data=msg)
+            try:
+                response = rq.post(url=post_url, data=msg)
+            except Exception as e:
+                self._logger.error(e)
+                raise Exception("Sending error")
             self._logger.debug("Response:" + response.text)
 
     @staticmethod
