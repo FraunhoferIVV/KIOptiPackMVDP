@@ -14,8 +14,7 @@ from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 
-from mvdp_services.dataframe_handler.env import env_dataframe_handler
-from mvdp_services.dataframe_handler.uvicorn_server import UvicornAsyncServer
+from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.dataframe_handler.TableThing import TableThing
 
 

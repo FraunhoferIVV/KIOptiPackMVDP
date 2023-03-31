@@ -16,7 +16,7 @@ from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
 from fastiot.util.read_yaml import read_config
 from starlette.middleware.cors import CORSMiddleware
 
-
+from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.data_provider.env import env_data_provider
 from mvdp_services.data_provider.uvicorn_server import UvicornAsyncServer
 

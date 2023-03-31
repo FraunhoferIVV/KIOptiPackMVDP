@@ -2,10 +2,19 @@
 import asyncio
 from typing import Optional, List
 
-import uvicorn
+try:
+    from uvicorn import Server, Config
+except ImportError:  # We mock some stuff for the following code not to fail
+    class UvicornServer:
+        pass
 
 
-class UvicornAsyncServer(uvicorn.Server):
+    class Config:
+        def __init__(self, **kwargs):
+            pass
+
+
+class UvicornAsyncServer(Server):
     """Uvicorn async server  """
 
     def __init__(self, app, port: int, host='0.0.0.0'):
@@ -17,7 +26,7 @@ class UvicornAsyncServer(uvicorn.Server):
             port (int, optional): the port. Defaults to PORT.
         """
         self._startup_done = asyncio.Event()
-        super().__init__(config=uvicorn.Config(app, host=host, port=port))
+        super().__init__(config=Config(app, host=host, port=port))
 
     async def startup(self, sockets: Optional[List] = None) -> None:
         """Override uvicorn startup"""
