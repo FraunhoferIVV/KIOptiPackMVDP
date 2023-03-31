@@ -33,19 +33,18 @@ class DataSpaceUploader:
         # make sure all series are dfs
         if not isinstance(parameters, DataFrame):
             parameters = DataFrame(parameters)
-        if not isinstance(values, DataFrame):
+        if values and not isinstance(values, DataFrame):
             values = DataFrame(values)
 
-        # Check if sensor does not have same name as any parameter
+        parameters = self._parse_parameters(parameters)
+        self._logger.debug(parameters)
         DataSpaceUploader._dataframes_validation(parameters, values)
 
-        self._upload_dataframe(material_id, DataFrameType.parameters,
-                               parameters)
+        self._upload_dataframe(material_id, parameters)
         if values is None:
-            self._upload_dataframe(material_id, DataFrameType.values,
-                                   values)
+            self._upload_dataframe(material_id, values)
 
-    def _upload_dataframe(self, material_id, df_type, dataframe: DataFrame):
+    def _upload_dataframe(self, material_id, dataframe: DataFrame):
         df_columns = DataSpaceUploader._reduce_dataframe(dataframe)
         post_batches = []
         for column in df_columns:
@@ -54,7 +53,6 @@ class DataSpaceUploader:
         for batch in post_batches:
             msg = {
                 "material_id": material_id,
-                "df_type": df_type,
                 "content": batch.to_json()
             }
             self._logger.debug("Message:" + str(msg))
@@ -65,14 +63,51 @@ class DataSpaceUploader:
                 raise Exception("Sending error!")
             self._logger.debug("Response:" + response.text)
 
+    def _parse_parameters(self, parameters):  # build tree structured parameters
+        try:
+            # fill missed parameters and save values
+            fill_parameters = {
+                "Parameter": [],
+                "Value": [],
+            }
+            for index, row in parameters.iterrows():
+                fill_param = dict()
+                for attr in list(parameters):
+                    if attr == 'Value':
+                        fill_parameters["Value"].append(row[attr])
+                    else:  # not value => part of that tree parameter (str)
+                        cell = row[attr]
+                        if cell == '-':
+                            cell = fill_parameters["Parameter"][-1][attr]
+                        fill_param[attr] = cell
+                fill_parameters["Parameter"].append(fill_param)
+            # unite parameters into tree parameters
+            tree_parameters = {
+                "Parameter": [],
+                "Value": fill_parameters["Value"]
+            }
+            for param_dict in fill_parameters["Parameter"]:
+                tree_param = ""
+                for attr in list(parameters):
+                    if attr != 'Value':
+                        tree_param += "::" + param_dict.get(attr, "")
+
+                tree_parameters["Parameter"].append(tree_param)
+            return DataFrame.from_dict(tree_parameters)
+        except Exception as e:
+            self._logger.error(e)
+            raise Exception("Couldn't parse the parameters dataframe")
+
     @staticmethod
     def _dataframes_validation(parameters, values):
-        unique_params = set()
-        for index, row in parameters.iterrows():
-            for attr in parameters:
-                unique_params.add(row[attr])
-        if bool(unique_params & set(values.columns)):
-            raise Exception("Values can't have common names with parameters!")
+        # Check if sensor does not have same name as any parameter
+        if values:
+            unique_params = set(parameters.columns)
+            for index, row in parameters.iterrows():
+                for attr in list(parameters):
+                    unique_params.add(row[attr])
+            if bool(unique_params & set(values.columns)):
+                raise Exception("Values can't have common names with parameters!")
 
     @staticmethod
     def _reduce_dataframe(dataframe: DataFrame):
@@ -95,4 +130,5 @@ if __name__ == '__main__':
     dsu = DataSpaceUploader("localhost")
     dsu.set_max_pos_len(20)
     df = pd.read_excel("/home/drobitko/Downloads/Protokoll_MotiV.xlsx")
-    dsu.upload("722", df[["Name", "Parameter"]], df["Werte"])
+    df = df.rename(columns={"Werte": "Value"})
+    dsu.upload("722", df[["Name", "Parameter", "Value"]])
