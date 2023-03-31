@@ -29,6 +29,7 @@ webservice = [    "fastapi",
     "edc_management_client>=0.0.3",
     "aiofiles",
     "uvicorn[standard]",
+    "requests>2,<3"
 ]
 
 [tool.setuptools.packages.find]
