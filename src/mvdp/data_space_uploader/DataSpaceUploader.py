@@ -6,6 +6,7 @@ from datetime import datetime
 import numpy as np
 import requests as rq
 import pandas as pd
+import setuptools
 
 from pandas import DataFrame
 from fastiot.core.time import get_time_now
@@ -23,7 +24,7 @@ class DataSpaceUploader:
         """
         self.post_url = f"http://{server}:{env_dataframe_handler.fastapi_port}/machine_upload"
         self.max_post_len = int(1e3)
-        self._logger = logging.getLogger('data_space_uploader')
+        self._logger = logging.getLogger('data_space_uploader_logger')
 
         self._logger.info("DataSpaceUploader initialized")
 
@@ -49,7 +50,7 @@ class DataSpaceUploader:
             start_timestamp = get_time_now()
 
         # parse parameters
-        parameters = self._parse_parameters(parameters)
+        parameters = DataSpaceUploader.parse_parameters(parameters, self._logger)
         self._logger.debug(parameters)
 
         # validate values and parsed parameters
@@ -66,8 +67,10 @@ class DataSpaceUploader:
         # creating dataframe list
         if df_type == DataFrameType.values:  # list of dataframe columns as dataframes
             df_list = DataSpaceUploader._reduce_dataframe(dataframe)
-        if df_type == DataFrameType.parameters:  # single dataframe of 2 columns
+        elif df_type == DataFrameType.parameters:  # single dataframe of 2 columns
             df_list = [dataframe]
+        else:
+            self._logger.warning("No dataframe type: uploading nothing")
         # parsing dataframe list in batches
         post_batches = []
         for column in df_list:
@@ -92,7 +95,9 @@ class DataSpaceUploader:
                 raise Exception("Sending error!")
             self._logger.debug("Response:" + response.text)
 
-    def _parse_parameters(self, parameters):  # build tree structured parameters
+    @staticmethod
+    def parse_parameters(parameters,
+                         logger: logging.Logger = logging.getLogger("parameters_parsing_logger")):  # build tree structured parameters
         try:
             # fill missed parameters and save values
             fill_parameters = {
@@ -124,7 +129,7 @@ class DataSpaceUploader:
                 tree_parameters["Parameter"].append(tree_param)
             return DataFrame.from_dict(tree_parameters)
         except Exception as e:
-            self._logger.error(e)
+            logger.error(e)
             raise Exception("Couldn't parse the parameters dataframe")
 
     @staticmethod
@@ -155,11 +160,12 @@ class DataSpaceUploader:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, force=True)
-    logging.debug('hello')
     dsu = DataSpaceUploader("0.0.0.0")
     dsu.set_max_pos_len(20)
     df = pd.read_excel("/home/drobitko/Downloads/Protokoll_MotiV.xlsx")
     df = df.rename(columns={"Werte": "Value"})
-    df1 = DataFrame([get_time_now(), 42])
+    df1 = DataFrame({'Timestamp': [get_time_now(), 42],
+                    'Sensor1': [42, 36]})
     df1 = df1.rename(columns={0: 'Timestamp'})
-    dsu.upload("722", df[["Name", "Parameter", "Value"]], DataFrame())
+    dsu.upload("722", df[["Name", "Parameter", "Value"]], df1)
+    # dsu.upload("733", DataFrame(), df[["Value"]])
