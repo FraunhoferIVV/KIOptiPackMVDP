@@ -1,7 +1,7 @@
 import logging
 
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 import requests as rq
@@ -92,7 +92,7 @@ class DataSpaceUploader:
                 response = rq.post(url=self.post_url, data=msg)
             except Exception as e:
                 self._logger.error(e)
-                raise Exception("Sending error!")
+                raise e
             self._logger.debug("Response:" + response.text)
 
     @staticmethod
@@ -144,7 +144,15 @@ class DataSpaceUploader:
 
     @staticmethod
     def _reduce_dataframe(dataframe: DataFrame) -> list:
-        columns_dfs = [DataSpaceUploader._reduce_columns(dataframe[col]) for col in dataframe]
+        if 'Timestamp' not in dataframe:
+            raise Exception('Impossible to reduce values dataframe without Timestamp column!')
+        columns_dfs = []
+        for column in dataframe:
+            if column != 'Timestamp':
+                columns_dfs.append(DataSpaceUploader._reduce_columns(dataframe[column]))
+
+        # hang timestamp column on each other column (perform left join)
+        columns_dfs = [col_df.join(dataframe[['Timestamp']]) for col_df in columns_dfs]
         return columns_dfs
 
     @staticmethod
@@ -164,8 +172,9 @@ if __name__ == '__main__':
     dsu.set_max_pos_len(20)
     df = pd.read_excel("/home/drobitko/Downloads/Protokoll_MotiV.xlsx")
     df = df.rename(columns={"Werte": "Value"})
-    df1 = DataFrame({'Timestamp': [get_time_now(), 42],
-                    'Sensor1': [42, 36]})
-    df1 = df1.rename(columns={0: 'Timestamp'})
+    df1 = DataFrame({'Timestamp': [get_time_now(),
+                                   get_time_now() + timedelta(milliseconds=1),
+                                   get_time_now() + timedelta(milliseconds=2)],
+                    'Sensor1': [42, 42, 36]})
     dsu.upload("722", df[["Name", "Parameter", "Value"]], df1)
     # dsu.upload("733", DataFrame(), df[["Value"]])

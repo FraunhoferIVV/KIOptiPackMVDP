@@ -10,7 +10,7 @@ import asyncio
 
 import pandas as pd
 from datetime import datetime
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, HTTPException
 from fastiot.core import FastIoTService
 from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
@@ -81,18 +81,15 @@ class DataframeHandlerService(FastIoTService):
                                                  msg=thing)
 
     async def _send_values_things(self, material_id, dataframe):
-        timestamp_in_table = 'Timestamp' in dataframe
-        attributes = [column for column in dataframe
-                      if column != 'Timestamp']
+        if 'Timestamp' not in dataframe:
+            raise HTTPException("Can't save values dataframe without Timestamp column")
+        # not Timestamp column within 2 columns of the dataframe
+        attr = next(col_name for col_name in dataframe if col_name != 'Timestamp')
         # create table things from table
         for index, row in dataframe.iterrows():
-            row = row.to_dict()   # This will make sure, we have python primitives like int and not np.int64
-            row_timestamp = get_time_now()
-            for attr in attributes:
-                if timestamp_in_table:
-                    timestamp = row['Timestamp'].to_pydatetime()
-                else:
-                    timestamp = row_timestamp
+            try:
+                row = row.to_dict()   # This will make sure, we have python primitives like int and not np.int64
+                timestamp = row['Timestamp'].to_pydatetime()
                 # create thing
                 thing = Thing(machine=self.machine,
                               name=attr,
@@ -101,9 +98,11 @@ class DataframeHandlerService(FastIoTService):
                               timestamp=timestamp
                               )
                 self._logger.debug(thing)
-                # no unit support yet
-                await self.broker_connection.publish(subject=Thing.get_subject("DataFrameImporter"),
-                                                     msg=thing)
+            except:
+                raise HTTPException("Can't build Thing object from a table cell!")
+            # no unit support yet
+            await self.broker_connection.publish(subject=Thing.get_subject("DataFrameImporter"),
+                                                 msg=thing)
 
 
 if __name__ == '__main__':
