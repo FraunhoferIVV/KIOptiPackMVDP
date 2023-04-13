@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: mvdp
+Version: 0.0.91
+Author: tklaeger
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Provides-Extra: webservice
+
+# Fast-IoT (fastiot)
+# mvdp
+
+Text

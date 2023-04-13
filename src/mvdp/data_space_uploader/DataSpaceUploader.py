@@ -17,12 +17,12 @@ from mvdp_services.dataframe_handler.env import env_dataframe_handler
 
 class DataSpaceUploader:
 
-    def __init__(self, server: str):
+    def __init__(self, server: str, port: int):
         """
         Instantiate data space uploader
         :param server:
         """
-        self.post_url = f"http://{server}:{env_dataframe_handler.fastapi_port}/machine_upload"
+        self.post_url = f"http://{server}:{port}/machine_upload"
         self.max_post_len = int(1e3)
         self._logger = logging.getLogger('data_space_uploader_logger')
 
@@ -46,7 +46,7 @@ class DataSpaceUploader:
         try:
             start_timestamp = values.head(1).to_dict().get("Timestamp").get(0)
         except:
-            self._logger.info("No start timestamp found: using the current time for parameters")
+            self._logger.warning("No start timestamp found: using the current time for parameters")
             start_timestamp = get_time_now()
 
         # parse parameters
@@ -168,8 +168,9 @@ class DataSpaceUploader:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, force=True)
+    """
     dsu = DataSpaceUploader("0.0.0.0")
-    dsu.set_max_pos_len(20)
+    dsu.set_max_pos_len(20)        self.assertTrue()
     df = pd.read_excel("/home/drobitko/Downloads/Protokoll_MotiV.xlsx")
     df = df.rename(columns={"Werte": "Value"})
     df1 = DataFrame({'Timestamp': [get_time_now(),
@@ -178,3 +179,4 @@ if __name__ == '__main__':
                     'Sensor1': [42, 42, 36]})
     dsu.upload("722", df[["Name", "Parameter", "Value"]], df1)
     # dsu.upload("733", DataFrame(), df[["Value"]])
+    """

@@ -1,0 +1,11 @@
+fastiot<1,>=0.2.202
+pandas
+openpyxl
+
+[webservice]
+fastapi
+python-multipart
+edc_management_client>=0.0.3
+aiofiles
+uvicorn[standard]
+requests<3,>2
