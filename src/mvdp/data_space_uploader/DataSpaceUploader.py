@@ -49,6 +49,7 @@ class DataSpaceUploader:
             self._logger.warning("No start timestamp found: using the current time for parameters")
             start_timestamp = get_time_now()
 
+        # TODO: check if parameters are parsed / parse otherwise
         # parse parameters
         parameters = DataSpaceUploader.parse_parameters(parameters, self._logger)
         self._logger.debug(parameters)
