@@ -1,7 +1,7 @@
 infrastructure-services:
   nats:
   mongodb:
-  #edc:
+  edc:
 
 services:
   nats_logger:
