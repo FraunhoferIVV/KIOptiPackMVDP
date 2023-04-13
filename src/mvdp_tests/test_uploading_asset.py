@@ -8,18 +8,18 @@ from mvdp.edc_management_client.api import ApplicationObservabilityApi, AssetApi
 from mvdp.edc_management_client.api_client import ApiClient
 from mvdp.edc_management_client.configuration import Configuration
 from mvdp.edc_management_client.models import AssetCreationRequestDto, AssetEntryDto, DataAddress, HealthStatus
-from mvdp.env import mvdp_env, MVDP_EDC_PORT, MVDP_EDC_HOST
+from mvdp.env import mvdp_env, MVDP_EDC_PORT, MVDP_EDC_HOST, MVDP_EDC_PORT_2
 
 
 class TestUploadingAssets(unittest.TestCase):
 
     def setUp(self):
         populate_test_env()
-        os.environ[MVDP_EDC_PORT] = '8182'
+        os.environ[MVDP_EDC_PORT_2] = '8182'
         os.environ[MVDP_EDC_HOST] = 'localhost'
 
         config = Configuration()
-        config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port}/api/v1/management"
+        config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port_2}/api/v1/management"
         config.verify_ssl = False
         config.debug = True
         config.api_key = {'X-Api-Key': 'ApiKeyDefaultValue'}

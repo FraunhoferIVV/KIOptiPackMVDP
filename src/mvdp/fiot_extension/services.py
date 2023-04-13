@@ -8,7 +8,7 @@ from mvdp.env import MVDP_EDC_HOST, MVDP_EDC_PORT, MVDP_EDC_PORT_2, MVDP_EDC_POR
 
 class EclipseDataSpaceConnector(InfrastructureService):
     name: str = "edc"
-    image: str = "docker.dev.ivv-dd.fhg.de/kioptipack/man_connector2"
+    image: str = "docker.dev.ivv-dd.fhg.de/kioptipack/man_connector1"
 
     host_name_env_var: str = MVDP_EDC_HOST
     ports: List[InfrastructureServicePort] = [InfrastructureServicePort(container_port=8181,
