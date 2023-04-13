@@ -17,11 +17,13 @@ from mvdp_services.dataframe_handler.env import env_dataframe_handler, MVDP_DATA
 # ToDo: find a way set up dataframe_hanlder port to that port (change dataframe handler)
 # ToDo: write unit and integration tests for uploader and dataframe_handler
 
+MVDP_DATAFRAME_HANDLER_PORT = str(get_local_random_port())
 
 
+@patch.dict('os.environ', {'MVDP_DATAFRAME_HANDLER_PORT': MVDP_DATAFRAME_HANDLER_PORT})
 class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
 
-    @patch.dict('os.environ', {'MVDP_DATAFRAME_HANDLER_PORT': str(get_local_random_port())})
+    @patch.dict('os.environ', {'MVDP_DATAFRAME_HANDLER_PORT': MVDP_DATAFRAME_HANDLER_PORT})
     async def asyncSetUp(self):
         populate_test_env()
         self.broker_connection = await NatsBrokerConnection.connect()
@@ -33,6 +35,7 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         self._db_col = self._database.get_collection('thing')
         self._db_col.delete_many({})
 
+    @patch.dict('os.environ', {'MVDP_DATAFRAME_HANDLER_PORT': MVDP_DATAFRAME_HANDLER_PORT})
     async def asyncTearDown(self):
         self.service_task.cancel()
         self.broker_connection.close()
@@ -49,8 +52,6 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.02)
         results = set(self._db_col.find({}))
         self.assertEqual(3, len(results))
-
-
 
 
 if __name__ == '__main__':
