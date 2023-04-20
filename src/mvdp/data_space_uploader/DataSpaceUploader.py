@@ -49,7 +49,6 @@ class DataSpaceUploader:
             self._logger.warning("No start timestamp found: using the current time for parameters")
             start_timestamp = get_time_now()
 
-        # TODO: check if parameters are parsed / parse otherwise
         # parse parameters
         parameters = DataSpaceUploader.parse_parameters(parameters, self._logger)
         self._logger.debug(parameters)
@@ -99,6 +98,10 @@ class DataSpaceUploader:
     @staticmethod
     def parse_parameters(parameters,
                          logger: logging.Logger = logging.getLogger("parameters_parsing_logger")):  # build tree structured parameters
+        # check if parameters have already been parsed
+        par_columns = list(parameters.columns)
+        if len(par_columns) == 2 and 'Parameter' in par_columns and 'ParValue' in par_columns:
+            return parameters
         try:
             # fill missed parameters and save values
             fill_parameters = {
@@ -137,7 +140,7 @@ class DataSpaceUploader:
     def _dataframes_validation(parameters, values):
         # Check if sensor does not have same name as any parameter
         if values is not None:
-            unique_params = set(parameters.columns)
+            unique_params = set()
             for index, row in parameters.iterrows():
                 unique_params.add(row["Parameter"])
             if bool(unique_params & set(values.columns)):
@@ -169,15 +172,3 @@ class DataSpaceUploader:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, force=True)
-    """
-    dsu = DataSpaceUploader("0.0.0.0")
-    dsu.set_max_pos_len(20)        self.assertTrue()
-    df = pd.read_excel("/home/drobitko/Downloads/Protokoll_MotiV.xlsx")
-    df = df.rename(columns={"Werte": "Value"})
-    df1 = DataFrame({'Timestamp': [get_time_now(),
-                                   get_time_now() + timedelta(milliseconds=1),
-                                   get_time_now() + timedelta(milliseconds=2)],
-                    'Sensor1': [42, 42, 36]})
-    dsu.upload("722", df[["Name", "Parameter", "Value"]], df1)
-    # dsu.upload("733", DataFrame(), df[["Value"]])
-    """
