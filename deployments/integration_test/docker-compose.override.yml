@@ -60,8 +60,6 @@ services:
       - ./resources/webdid:/usr/share/nginx/html
     ports:
       - "7070:80"
-    networks:
-      - "fastiot-net"
 
   # cli-tools to help setup MVD environment e.g. registering participant to authority.
   cli-tools:
