@@ -51,8 +51,6 @@ services:
       - "7174:7171"
     volumes:
       - ./resources:/localFiles/resources
-    networks:
-      - "fastiot-net"
 
   # A nginx based HTTP server to serve dataspace participants DIDs.
   did-server:
@@ -79,5 +77,3 @@ services:
         condition: service_healthy
       registration-service:
         condition: service_healthy
-    networks:
-      - "fastiot-net"
