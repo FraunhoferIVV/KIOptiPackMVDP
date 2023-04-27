@@ -51,6 +51,8 @@ services:
       - "7174:7171"
     volumes:
       - ./resources:/localFiles/resources
+    networks:
+      - "fastiot-net"
 
   # A nginx based HTTP server to serve dataspace participants DIDs.
   did-server:
@@ -60,11 +62,15 @@ services:
       - ./resources/webdid:/usr/share/nginx/html
     ports:
       - "7070:80"
+    networks:
+      - "fastiot-net"
 
   # cli-tools to help setup MVD environment e.g. registering participant to authority.
   cli-tools:
     container_name: cli-tools
     image: docker.dev.ivv-dd.fhg.de/kioptipack/cli-tool
+    environment:
+      MVDP_DID_SERVER: "did-server"
     volumes:
       - ./resources:/resources
       - ./configs:/common-resources
@@ -73,3 +79,5 @@ services:
         condition: service_healthy
       registration-service:
         condition: service_healthy
+    networks:
+      - "fastiot-net"
