@@ -12,7 +12,8 @@ requires = [
 name = "mvdp"
 version = "0.0.91"
 authors = [
-    { name = "tklaeger" },
+    { name = "Tilman Klaeger", email = "tilman.klaeger@ivv-dd.fraunhofer.de"},
+    { name = "Volodymyr Drobitko", email = "vodymyr.drobitko@ivv-dd.fraunhofer.de"},
 ]
 description = ""
 readme = "README.md"
@@ -28,7 +29,8 @@ webservice = [    "fastapi",
     "python-multipart",
     "aiofiles",
     "uvicorn[standard]",
-    "requests>2,<3"
+    "requests>2,<3",
+    "pymongo",
 ]
 
 [tool.setuptools.packages.find]
