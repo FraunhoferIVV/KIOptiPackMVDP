@@ -15,8 +15,6 @@ class TestUploadingAssets(unittest.TestCase):
 
     def setUp(self):
         populate_test_env()
-        os.environ[MVDP_EDC_PORT_2] = '8182'
-        os.environ[MVDP_EDC_HOST] = 'localhost'
 
         config = Configuration()
         config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port_2}/api/v1/management"

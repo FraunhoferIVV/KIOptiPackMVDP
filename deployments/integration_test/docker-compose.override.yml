@@ -1,0 +1,75 @@
+services:
+
+#  connector1:
+#    container_name: company1
+#    image: docker.dev.ivv-dd.fhg.de/kioptipack/man_connector1
+#    environment:
+#      IDS_WEBHOOK_ADDRESS: http://company1:8282
+#      EDC_CONNECTOR_NAME: company1
+#      EDC_IDENTITY_DID_URL: did:web:did-server:company1
+#      EDC_VAULT: /localFiles/resources/vault/company1/company1-vault.properties
+#      EDC_KEYSTORE: /localFiles/resources/vault/company1/company1-keystore.jks
+#      EDC_SELF_DESCRIPTION_DOCUMENT_PATH: /localFiles/resources/self-description/company1/sdd.json
+#      EDC_KEYSTORE_PASSWORD: test123
+#      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+#      EDC_IAM_DID_WEB_USE_HTTPS: "false"
+#      REGISTRATION_SERVICE_API_URL: http://registration-service:8184/authority
+#      EDC_WEB_REST_CORS_ENABLED: "true"
+#      EDC_WEB_REST_CORS_HEADERS: "origin,content-type,accept,authorization,x-api-key"
+#    depends_on:
+#      - registration-service
+#      - did-server
+#    ports:
+#      - "8181:8181"
+#      - "8182:8182"
+#      - "5005:5005"
+#      - "7171:7171"
+#    volumes:
+#      - ./resources:/localFiles/resources
+
+  # Dataspace registration service authority.
+  registration-service:
+    container_name: registration-service
+    image: docker.dev.ivv-dd.fhg.de/kioptipack/reg_service
+    environment:
+      JWT_AUDIENCE: http://registration-service:8184/authority
+      WEB_HTTP_AUTHORITY_PORT: 8184
+      WEB_HTTP_AUTHORITY_PATH: /authority
+      EDC_IAM_DID_WEB_USE_HTTPS: "false"
+      EDC_CONNECTOR_NAME: registration-service
+      EDC_IDENTITY_DID_URL: did:web:did-server:registration-service
+      EDC_SELF_DESCRIPTION_DOCUMENT_PATH: /localFiles/resources/self-description/registration-service/sdd.json
+      EDC_VAULT: /localFiles/resources/vault/registration-service/registration-service-vault.properties
+      EDC_KEYSTORE: /localFiles/resources/vault/registration-service/registration-service-keystore.jks
+      EDC_KEYSTORE_PASSWORD: test123
+      EDC_API_AUTH_KEY: ApiKeyDefaultValue
+      EDC_ERROR_RESPONSE_VERBOSE: "true"
+    ports:
+      - "8184:8184"
+      - "8185:8181"
+      - "5008:5008"
+      - "7174:7171"
+    volumes:
+      - ./resources:/localFiles/resources
+
+  # A nginx based HTTP server to serve dataspace participants DIDs.
+  did-server:
+    container_name: did-server-test
+    image: nginx
+    volumes:
+      - ./resources/webdid:/usr/share/nginx/html
+    ports:
+      - "7070:80"
+
+  # cli-tools to help setup MVD environment e.g. registering participant to authority.
+  cli-tools:
+    container_name: cli-tools
+    image: docker.dev.ivv-dd.fhg.de/kioptipack/cli-tool
+    volumes:
+      - ./resources:/resources
+      - ./configs:/common-resources
+    depends_on:
+      edc:
+        condition: service_healthy
+      registration-service:
+        condition: service_healthy
