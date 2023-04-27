@@ -1,0 +1,37 @@
+{
+  "policy":
+  {
+    "type":"SET",
+    "permissions":[
+      {
+        "edctype":"dataspaceconnector:permission",
+        "uid":null,
+        "target":null,
+        "action":
+        {
+          "type":"USE",
+          "includedIn":null,
+          "constraint":null
+        },
+        "assignee":null,
+        "assigner":null,
+        "constraints":[
+          {
+            "edctype":"AtomicConstraint",
+            "leftExpression":
+            {
+              "edctype":"dataspaceconnector:literalexpression",
+              "value":"ids:absoluteSpatialPosition"
+            },
+            "rightExpression":
+            {
+              "edctype":"dataspaceconnector:literalexpression",
+              "value":"eu"
+            },
+            "operator":"EQ"
+          }],
+        "duties":[]
+      }]
+  },
+  "id":"PolicyTest"
+}

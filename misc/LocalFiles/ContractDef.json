@@ -1,0 +1,13 @@
+{
+  "id":"ContractTest",
+  "criteria": [
+    {
+      "operandLeft":"asset:prop:id",
+      "operator":"in",
+      "operandRight": [
+        "DatasetTest"
+      ]
+    }],
+  "accessPolicyId":"PolicyTest",
+  "contractPolicyId":"PolicyTest"
+}

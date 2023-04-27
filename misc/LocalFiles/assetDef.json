@@ -1,0 +1,23 @@
+{
+  "asset":
+  {
+    "properties":
+    {
+      "asset:prop:name":"test",
+      "asset:prop:version":"1.0",
+      "asset:prop:id":"DatasetTest",
+      "asset:prop:contenttype":"text/plain"
+    }
+  },
+  "dataAddress":
+  {
+    "properties":
+    {
+      "type":"AzureStorage",
+      "account":"",
+      "container":"src-container",
+      "blobname":"",
+      "keyName":"-key1"
+    }
+  }
+}
