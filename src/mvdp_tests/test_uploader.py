@@ -46,10 +46,10 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
                 'Value': [False, 42, 42.5]
             })
             # upload empty parameters
-            uploader.upload('experiment323', DataFrame())
-            await asyncio.sleep(0.05)
-            results = list(self._db_col.find({}))
-            self.assertEqual(0, len(results))
+            self.assertRaises(Exception,
+                              uploader.upload,
+                              'experiment324',
+                              DataFrame())
             # upload both parameters and value empty
             await asyncio.sleep(0.05)
             self.assertRaises(Exception,
@@ -64,12 +64,12 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
             uploader = DataSpaceUploader(server='localhost',
                                          port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
-            df = DataFrame({
+            parameters = DataFrame({
                 'ExperimentName': ['exp1', '-', 'exp2'],
                 'Parameter': ['param1', 'param2', 'param2'],
                 'Value': [False, 42, 42.5]
             })
-            uploader.upload('experiment323', df)
+            uploader.upload('experiment323', reformat_parameters(parameters))
             await asyncio.sleep(0.2)
 
             results = list(self._db_col.find({}))

@@ -19,7 +19,7 @@ def fill_tree_dataframe(dataframe: DataFrame):
             if table_entry == '-':  # missing entry
                 # copy the last filled value for the attribute
                 table_entry = fill_table[attr][-1]
-            table_entry[attr].append(table_entry)
+            fill_table[attr].append(table_entry)
     return DataFrame.from_dict(fill_table)
 
 
