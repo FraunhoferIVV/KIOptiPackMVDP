@@ -75,7 +75,6 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
             results = list(self._db_col.find({}))
             self.assertEqual(3, len(results))
 
-    @unittest.skip("Currently not working")
     async def test_upload_integration(self):
         async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
 
@@ -117,7 +116,7 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
                         break
                 self.assertTrue(found)
 
-    async def test_unit_parameter_parsing(self):
+    async def test_unit_parameter_formatting(self):
         parameters_df = DataFrame({
             'ExperimentName': ['exp1', '-', 'exp2'],
             'Parameter': ['param1', 'param2', 'param2'],
