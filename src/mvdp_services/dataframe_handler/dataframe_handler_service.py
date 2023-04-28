@@ -5,17 +5,16 @@ Application logic for dataframe_handler service
 import asyncio
 import logging
 from datetime import datetime
-from multiprocessing import Process
 
 import pandas as pd
-import uvicorn
 from fastapi import FastAPI, Form, HTTPException
 from fastiot.core import FastIoTService
-from fastiot.env import env_basic
+from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.data_space_uploader.constants import DataFrameType
+from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.dataframe_handler.env import env_dataframe_handler
 
 
@@ -26,12 +25,7 @@ class DataframeHandlerService(FastIoTService):
 
         self.app = FastAPI()
         self._register_routes()
-        self._uvicorn_proc = Process(target=uvicorn.run,
-                                     args=(self.app,),
-                                     kwargs={"host": "0.0.0.0", "port": env_dataframe_handler.fastapi_port,
-                                             "log_level": env_basic.log_level},
-                                     daemon=True)
-
+        self._server = UvicornAsyncServer(app=self.app, port=env_dataframe_handler.fastapi_port)
 
         # define machine for this frontend service
         self.machine = "TEST_MACHINE"
@@ -48,23 +42,25 @@ class DataframeHandlerService(FastIoTService):
 
     async def _start(self):
         """ Methods to start once the module is initialized """
-        self._uvicorn_proc.start()
+        await self._server.up()
         await asyncio.sleep(0.2)  # time for the server to start
 
     async def _stop(self):
         """ Methods to call on module shutdown """
-        self._uvicorn_proc.terminate()
+        await self._server.down()
 
     async def _handle_post(self, material_id: str = Form(...),
                            start_timestamp: datetime = Form(None),
                            df_type: DataFrameType = Form(...),
                            content: str = Form(...)):
+
         dataframe = pd.read_json(content).sort_index()
         self._logger.debug(dataframe)
         if df_type == DataFrameType.values:
             await self._send_values_things(material_id, dataframe)
         if df_type == DataFrameType.parameters:
             await self._send_parameters_things(material_id, dataframe, start_timestamp)
+
         return "successfully uploaded"
 
     async def _send_parameters_things(self, material_id, dataframe, start_timestamp: datetime):

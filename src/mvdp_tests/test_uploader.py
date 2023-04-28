@@ -1,19 +1,15 @@
 import asyncio
+import concurrent
 import os
+import sys
 import unittest
 from datetime import datetime
-import pandas as pd
-from pandas import DataFrame
 
 from fastiot.core.broker_connection import NatsBrokerConnection
-from fastiot.testlib import populate_test_env
-from fastiot.util.ports import get_local_random_port
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
-from fastiot.msg.thing import Thing
-from unittest.mock import patch
-
-
+from fastiot.testlib import populate_test_env
+from pandas import DataFrame
 
 from mvdp.data_space_uploader.DataSpaceUploader import DataSpaceUploader
 from mvdp_services.dataframe_handler.dataframe_handler_service import DataframeHandlerService
@@ -38,7 +34,11 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         await self.broker_connection.close()
 
     async def test_upload_empty(self):
-        #async with DataframeHandlerService(broker_connection=self.broker_connection) as _:
+        try:
+            proc = await asyncio.create_subprocess_exec(sys.executable, "-m", "mvdp_services.dataframe_handler.run")
+            await asyncio.sleep(0.2)
+        except:
+            pass
         uploader = DataSpaceUploader(server='localhost',
                                      port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
         df = DataFrame({
@@ -60,58 +60,74 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
                           DataFrame())
         results = list(self._db_col.find({}))
         self.assertEqual(0, len(results))
+        proc.terminate()
+
 
     async def test_upload_only_parameters(self):
-        async with DataframeHandlerService(broker_connection=self.broker_connection) as _:
-            uploader = DataSpaceUploader(server='localhost',
-                                         port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
-            df = DataFrame({
-                'ExperimentName': ['exp1', '-', 'exp2'],
-                'Parameter': ['param1', 'param2', 'param2'],
-                'Value': [False, 42, 42.5]
-            })
-            uploader.upload('experiment323', df)
-            await asyncio.sleep(0.1)
+        try:
+            proc = await asyncio.create_subprocess_exec(sys.executable, "-m", "mvdp_services.dataframe_handler.run")
+            await asyncio.sleep(0.2)
+        except:
+            pass
+
+        uploader = DataSpaceUploader(server='localhost',
+                                     port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
+        df = DataFrame({
+            'ExperimentName': ['exp1', '-', 'exp2'],
+            'Parameter': ['param1', 'param2', 'param2'],
+            'Value': [False, 42, 42.5]
+        })
+        uploader.upload('experiment323', df)
+        await asyncio.sleep(0.2)
 
         results = list(self._db_col.find({}))
         self.assertEqual(3, len(results))
+        proc.terminate()
 
     async def test_upload_integration(self):
-        async with DataframeHandlerService(broker_connection=self.broker_connection) as _:
-            uploader = DataSpaceUploader(server='localhost',
-                                         port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
-            parameters_df = DataFrame({
-                'ExperimentName': ['exp1', '-', 'exp2'],
-                'Parameter': ['param1', 'param2', 'param2'],
-                'Value': [False, 42, 42.5]
-            })
-            values_df = DataFrame({
-                'Timestamp': [
-                    datetime(year=2023, month=4, day=13, microsecond=1000),
-                    datetime(year=2023, month=4, day=13, microsecond=2000)
-                ],
-                'Sensor_1': [3, 7],
-                'Sensor_2': [0.2, 'undefined']
-            })
+        try:
+            proc = await asyncio.create_subprocess_exec(sys.executable, "-m", "mvdp_services.dataframe_handler.run")
+            await asyncio.sleep(0.2)
+        except:
+            pass
+        uploader = DataSpaceUploader(server='localhost',
+                                     port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
+        parameters_df = DataFrame({
+            'ExperimentName': ['exp1', '-', 'exp2'],
+            'Parameter': ['param1', 'param2', 'param2'],
+            'Value': [False, 42, 42.5]
+        })
+        values_df = DataFrame({
+            'Timestamp': [
+                datetime(year=2023, month=4, day=13, microsecond=1000),
+                datetime(year=2023, month=4, day=13, microsecond=2000)
+            ],
+            'Sensor_1': [3, 7],
+            'Sensor_2': [0.2, 'undefined']
+        })
+        try:
             uploader.upload('experiment728', parameters_df, values_df)
-            await asyncio.sleep(0.05)
-            results = list(self._db_col.find({}))
-            self.assertEqual(7, len(results))
-            thing_parts = [{
-                'name': '::exp1::param2',
-                'value': 42
-            }, {
-                'timestamp': datetime(2023, 4, 13, 0, 0, 0, 2000),
-                'name': 'Sensor_1',
-                'value': 7
-            }]
-            for thing_part in thing_parts:
-                found = False
-                for result in results:
-                    if thing_part.items() <= result.items():
-                        found = True
-                        break
-                self.assertTrue(found)
+            await asyncio.sleep(2)
+        except:
+            pass
+        results = list(self._db_col.find({}))
+        self.assertEqual(7, len(results))
+        thing_parts = [{
+            'name': '::exp1::param2',
+            'value': 42
+        }, {
+            'timestamp': datetime(2023, 4, 13, 0, 0, 0, 2000),
+            'name': 'Sensor_1',
+            'value': 7
+        }]
+        for thing_part in thing_parts:
+            found = False
+            for result in results:
+                if thing_part.items() <= result.items():
+                    found = True
+                    break
+            self.assertTrue(found)
+        proc.terminate()
 
     async def test_unit_parameter_parsing(self):
         parameters_df = DataFrame({

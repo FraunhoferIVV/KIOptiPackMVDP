@@ -23,7 +23,7 @@ class UvicornAsyncServer(Server):
 
         Args:
             app (FastAPI, optional): the FastAPI app. Defaults to main.app.
-            host (str, optional): the host ip. Defaults to '127.0.0.1'.
+            host (str, optional): the host ip. Defaults to '0.0.0.0'.
             port (int, optional): the port. Defaults to PORT.
         """
         self._startup_done = asyncio.Event()
