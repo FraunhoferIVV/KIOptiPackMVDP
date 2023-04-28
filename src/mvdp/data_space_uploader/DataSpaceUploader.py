@@ -1,18 +1,14 @@
 import logging
-
-from typing import Optional
-from datetime import datetime, timedelta
-
 import numpy as np
 import requests as rq
-import pandas as pd
-import setuptools
 
+from typing import Optional
+from datetime import datetime
 from pandas import DataFrame
+
 from fastiot.core.time import get_time_now
 
 from mvdp.data_space_uploader.constants import DataFrameType
-from mvdp_services.dataframe_handler.env import env_dataframe_handler
 
 
 class DataSpaceUploader:
@@ -20,22 +16,30 @@ class DataSpaceUploader:
     def __init__(self, server: str, port: int):
         """
         Instantiate data space uploader
-        :param server:
+        :param server: http server link
+        :param port: a free port for the service
         """
         self.post_url = f"http://{server}:{port}/machine_upload"
         self.max_post_len = int(1e3)
         self._logger = logging.getLogger('data_space_uploader_logger')
-
+        # add local logger
         self._logger.info("DataSpaceUploader initialized")
 
     def set_max_pos_len(self, max_post_len: int):
+        """
+        Set the maximal message length to be posted to the dataframe_handler_service
+        :param max_post_len: the message length to be set up
+        """
+        # don't allow to small messages cause of the overhead
         if max_post_len < 10:
             self._logger.error("Too small post message length limit. New value not set")
             return
         self.max_post_len = max_post_len
 
     def upload(self, material_id: str, parameters: DataFrame, values: Optional[DataFrame] = None):
-
+        """
+        Upload parameters and values dataframes
+        """
         # make sure all series (columns) are dfs
         if not isinstance(parameters, DataFrame):
             parameters = DataFrame(parameters)
@@ -45,7 +49,7 @@ class DataSpaceUploader:
         # get starting timestamp for parameters
         try:
             start_timestamp = values.head(1).to_dict().get("Timestamp").get(0)
-        except:
+        except Exception:
             self._logger.warning("No start timestamp found: using the current time for parameters")
             start_timestamp = get_time_now()
 
@@ -56,6 +60,7 @@ class DataSpaceUploader:
         # validate values and parsed parameters
         DataSpaceUploader._dataframes_validation(parameters, values)
 
+        # upload dataframes
         self._upload_dataframe(material_id, DataFrameType.parameters, parameters, start_timestamp)
         if values is not None:
             self._upload_dataframe(material_id, DataFrameType.values, values)
@@ -64,19 +69,28 @@ class DataSpaceUploader:
                           df_type: DataFrameType,
                           dataframe: DataFrame,
                           start_timestamp: Optional[datetime] = None):
+        """
+        Upload a certain dataframe type
+        :param material_id: uniquer identifier for dataframe uploading
+        :param df_type: dataframe type
+        :param dataframe: dataframe to upload
+        :param start_timestamp: universal timestamp for the dataframe if needed
+        """
         # creating dataframe list
-        if df_type == DataFrameType.values:  # list of dataframe columns as dataframes
+        if df_type == DataFrameType.values:
             df_list = DataSpaceUploader._reduce_dataframe(dataframe)
-        elif df_type == DataFrameType.parameters:  # single dataframe of 2 columns
-            df_list = [dataframe]
+        elif df_type == DataFrameType.parameters:
+            # send parsed parameters as single dataframe
+            df_list = [DataSpaceUploader.parse_parameters(dataframe)]
         else:
-            self._logger.warning("No dataframe type: uploading nothing")
+            self._logger.error("No dataframe type: nothing to upload")
+            return
         # parsing dataframe list in batches
         post_batches = []
         for column in df_list:
             split_index = len(column) // self.max_post_len + 1
             post_batches += np.array_split(column, split_index)
-        # sending batches vie message broker
+        # sending batches as messages
         for batch in post_batches:
             # create message
             msg = {
@@ -96,14 +110,21 @@ class DataSpaceUploader:
             self._logger.debug("Response:" + response.text)
 
     @staticmethod
-    def parse_parameters(parameters,
-                         logger: logging.Logger = logging.getLogger("parameters_parsing_logger")):  # build tree structured parameters
+    def parse_parameters(parameters: DataFrame,
+                         logger: logging.Logger = logging.getLogger("parameters_parsing_logger")):
+        """
+        parse parameters for the following upload
+        :return: dataframe with 2 columns:
+            'Parameter': tree structured parameter names
+            'ParValue': values for the parameters
+        """
         # check if parameters have already been parsed
         par_columns = list(parameters.columns)
         if len(par_columns) == 2 and 'Parameter' in par_columns and 'ParValue' in par_columns:
             return parameters
+        # parsing
         try:
-            # fill missed parameters and save values
+            # fill missing parameters and save values
             fill_parameters = {
                 "Parameter": [],
                 "ParValue": [],
@@ -113,13 +134,15 @@ class DataSpaceUploader:
                 for attr in list(parameters):
                     if attr == 'Value':
                         fill_parameters["ParValue"].append(row[attr])
-                    else:  # not value => part of that tree parameter (str)
-                        cell = row[attr]
-                        if cell == '-':
-                            cell = fill_parameters["Parameter"][-1][attr]
-                        fill_param[attr] = cell
+                    else:  # not value => part of a tree parameter
+                        table_cell = row[attr]
+                        if table_cell == '-':
+                            # copy attribute from the last filled parameter
+                            table_cell = fill_parameters["Parameter"][-1][attr]
+                        fill_param[attr] = table_cell
                 fill_parameters["Parameter"].append(fill_param)
-            # unite parameters into tree parameters
+
+            # unite parameters to tree parameters
             tree_parameters = {
                 "Parameter": [],
                 "ParValue": fill_parameters["ParValue"]
@@ -138,29 +161,46 @@ class DataSpaceUploader:
 
     @staticmethod
     def _dataframes_validation(parameters, values):
-        # Check if sensor does not have same name as any parameter
+        """
+        Check if sensor does not have the same name as any parameter
+        """
         if values is not None:
+            # create a set of unique parameters
             unique_params = set()
             for index, row in parameters.iterrows():
                 unique_params.add(row["Parameter"])
+            # check if values column names aren't the same as unique parameters
+            # <=> check if the set intersection is empty
             if bool(unique_params & set(values.columns)):
                 raise Exception("Values can't have common names with parameters!")
 
     @staticmethod
     def _reduce_dataframe(dataframe: DataFrame) -> list:
+        """
+        reduce values dataframe to a bunch of timestamp-column dataframes
+        :param dataframe: dataframe to reduce
+        :return: list of dataframes with 2 columns:
+            1. column: reduced column of the values dataframe
+            2. column: corresponding timestamps for each value in the first column
+        """
         if 'Timestamp' not in dataframe:
             raise Exception('Impossible to reduce values dataframe without Timestamp column!')
+        # create a list of the reduced columns
         columns_dfs = []
         for column in dataframe:
             if column != 'Timestamp':
                 columns_dfs.append(DataSpaceUploader._reduce_columns(dataframe[column]))
-
-        # hang timestamp column on each other column (perform left join)
+        # hang timestamp column on each other column (performs left join)
         columns_dfs = [col_df.join(dataframe[['Timestamp']]) for col_df in columns_dfs]
         return columns_dfs
 
     @staticmethod
     def _reduce_columns(column) -> DataFrame:
+        """
+        remove all column entries, that are equal to the previous entry
+        :param column: column to reduce
+        :return: reduced column
+        """
         same_value_indices = []
         items = list(column.items())
         for index, row in items[1:]:
