@@ -14,9 +14,7 @@ from pandas import DataFrame
 from mvdp.data_space_uploader.DataSpaceUploader import DataSpaceUploader
 from mvdp_services.dataframe_handler.dataframe_handler_service import DataframeHandlerService
 from mvdp_services.dataframe_handler.env import MVDP_DATAFRAME_HANDLER_PORT
-
-
-
+from mvdp_tools.dataframe_formatting import reformat_parameters
 
 
 class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
@@ -125,19 +123,20 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
             'Parameter': ['param1', 'param2', 'param2'],
             'Value': [False, 42, 42.5]
         })
-        parsed_parameters = DataFrame({
+        formatted_parameters = DataFrame({
             'Parameter': ['::exp1::param1',
                           '::exp1::param2',
                           '::exp2::param2'],
             'ParValue': [False, 42, 42.5]
         })
-        result_1 = DataSpaceUploader.parse_parameters(parameters_df)
-        self.assertTrue(parsed_parameters.equals(result_1))
-        result_2 = DataSpaceUploader.parse_parameters(result_1)  # preparsed
-        self.assertTrue(parsed_parameters.equals(result_2))
+        result_1 = reformat_parameters(parameters_df)
+        self.assertTrue(formatted_parameters.equals(result_1))
+        result_2 = reformat_parameters(result_1)  # result_ 1 has already been formatted
+        self.assertTrue(formatted_parameters.equals(result_2))
 
     async def test_unit_validation(self):
-        parsed_parameters = DataFrame({
+        # test correct
+        formatted_parameters = DataFrame({
             'Parameter': ['::exp1::param1',
                           '::exp1::param2',
                           '::exp2::param2'],
@@ -152,6 +151,9 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
             'Sensor_2': [0.2, 'undefined'],
             'Parameter': [1, 2]
         })
+        DataSpaceUploader._dataframes_validation(formatted_parameters, None)
+        
+        # test wrong values
         wrong_values = DataFrame({
             'Timestamp': [
                 datetime(year=2023, month=4, day=13, microsecond=1000),
@@ -161,12 +163,22 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
             'Sensor_1': [3, 7],
             'Sensor_2': [0.2, 'undefined']
         })
-        DataSpaceUploader._dataframes_validation(parsed_parameters, None)
-        DataSpaceUploader._dataframes_validation(parsed_parameters, correct_values)
         self.assertRaises(Exception,
                           DataSpaceUploader._dataframes_validation,
-                          parsed_parameters,
+                          formatted_parameters,
                           wrong_values)
+
+        # test wrong parameters formatting
+        wrong_parameters = DataFrame({
+            'Parameter': ['::exp1::param1',
+                          '::exp1::param2',
+                          '::exp2::param2'],
+            'ParValueX': [False, 42, 42.5]
+        })
+        self.assertRaises(Exception,
+                          DataSpaceUploader._dataframes_validation,
+                          wrong_parameters,
+                          correct_values)
 
     async def test_unit_reduce_dataframe(self):
         values_df = DataFrame({
