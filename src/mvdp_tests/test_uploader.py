@@ -3,10 +3,12 @@ import os
 import unittest
 from datetime import datetime
 
+from fastiot.cli.env import env_cli
 from fastiot.core.broker_connection import NatsBrokerConnection
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
 from fastiot.testlib import populate_test_env, BackgroundProcess
+from fastiot.util.ports import get_local_random_port
 from pandas import DataFrame
 
 from mvdp.data_space_uploader.DataSpaceUploader import DataSpaceUploader
@@ -23,8 +25,10 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         populate_test_env()
         self.broker_connection = await NatsBrokerConnection.connect()
 
-        # os.environ[MVDP_DATAFRAME_HANDLER_PORT] = str(get_local_random_port())
-        os.environ[MVDP_DATAFRAME_HANDLER_PORT] = '5480'
+        if env_cli.is_ci_runner:
+            os.environ[MVDP_DATAFRAME_HANDLER_PORT] = str(get_local_random_port())
+        else:
+            os.environ[MVDP_DATAFRAME_HANDLER_PORT] = '5480'
 
         db_client = get_mongodb_client_from_env()
         database = db_client.get_database(env_mongodb.name)
@@ -35,7 +39,7 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         await self.broker_connection.close()
 
     async def test_upload_empty(self):
-        async with BackgroundProcess(DataframeHandlerService):
+        async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
             uploader = DataSpaceUploader(server='localhost',
                                          port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
             df = DataFrame({
@@ -59,7 +63,7 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(0, len(results))
 
     async def test_upload_only_parameters(self):
-        async with BackgroundProcess(DataframeHandlerService):
+        async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
             uploader = DataSpaceUploader(server='localhost',
                                          port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
             df = DataFrame({
@@ -75,7 +79,7 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
 
     @unittest.skip("Currently not working")
     async def test_upload_integration(self):
-        async with BackgroundProcess(DataframeHandlerService):
+        async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
 
             uploader = DataSpaceUploader(server='localhost',
                                          port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
