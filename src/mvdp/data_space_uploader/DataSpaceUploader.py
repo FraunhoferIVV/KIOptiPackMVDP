@@ -43,6 +43,7 @@ class DataSpaceUploader:
         # make sure all series (columns) are dfs
         if not isinstance(parameters, DataFrame):
             parameters = DataFrame(parameters)
+            self._logger(parameters)
         if values is not None and not isinstance(values, DataFrame):
             values = DataFrame(values)
 
@@ -53,11 +54,7 @@ class DataSpaceUploader:
             self._logger.warning("No start timestamp found: using the current time for parameters")
             start_timestamp = get_time_now()
 
-        # parse parameters
-        parameters = DataSpaceUploader.parse_parameters(parameters, self._logger)
-        self._logger.debug(parameters)
-
-        # validate values and parsed parameters
+        # validate values and parameters
         DataSpaceUploader._dataframes_validation(parameters, values)
 
         # upload dataframes
@@ -78,14 +75,15 @@ class DataSpaceUploader:
         """
         # creating dataframe list
         if df_type == DataFrameType.values:
+            # build dataframe list with reduced values
             df_list = DataSpaceUploader._reduce_dataframe(dataframe)
         elif df_type == DataFrameType.parameters:
-            # send parsed parameters as single dataframe
-            df_list = [DataSpaceUploader.parse_parameters(dataframe)]
+            # send formatted parameters as single dataframe
+            df_list = [dataframe]
         else:
             self._logger.error("No dataframe type: nothing to upload")
             return
-        # parsing dataframe list in batches
+        # split dataframe list in batches
         post_batches = []
         for column in df_list:
             split_index = len(column) // self.max_post_len + 1
@@ -110,59 +108,30 @@ class DataSpaceUploader:
             self._logger.debug("Response:" + response.text)
 
     @staticmethod
-    def parse_parameters(parameters: DataFrame,
-                         logger: logging.Logger = logging.getLogger("parameters_parsing_logger")):
+    def _dataframes_validation(parameters: DataFrame, values: DataFrame):
         """
-        parse parameters for the following upload
-        :return: dataframe with 2 columns:
-            'Parameter': tree structured parameter names
-            'ParValue': values for the parameters
+        check if the dataframes can be loaded correctly
         """
-        # check if parameters have already been parsed
-        par_columns = list(parameters.columns)
-        if len(par_columns) == 2 and 'Parameter' in par_columns and 'ParValue' in par_columns:
-            return parameters
-        # parsing
-        try:
-            # fill missing parameters and save values
-            fill_parameters = {
-                "Parameter": [],
-                "ParValue": [],
-            }
-            for index, row in parameters.iterrows():
-                fill_param = dict()
-                for attr in list(parameters):
-                    if attr == 'Value':
-                        fill_parameters["ParValue"].append(row[attr])
-                    else:  # not value => part of a tree parameter
-                        table_cell = row[attr]
-                        if table_cell == '-':
-                            # copy attribute from the last filled parameter
-                            table_cell = fill_parameters["Parameter"][-1][attr]
-                        fill_param[attr] = table_cell
-                fill_parameters["Parameter"].append(fill_param)
-
-            # unite parameters to tree parameters
-            tree_parameters = {
-                "Parameter": [],
-                "ParValue": fill_parameters["ParValue"]
-            }
-            for param_dict in fill_parameters["Parameter"]:
-                tree_param = ""
-                for attr in list(parameters):
-                    if attr != 'Value':
-                        tree_param += "::" + param_dict.get(attr, "")
-
-                tree_parameters["Parameter"].append(tree_param)
-            return DataFrame.from_dict(tree_parameters)
-        except Exception as e:
-            logger.error(e)
-            raise Exception("Couldn't parse the parameters dataframe")
+        DataSpaceUploader._dataframes_parameters_validation(parameters)
+        DataSpaceUploader._dataframes_names_validation(parameters, values)
 
     @staticmethod
-    def _dataframes_validation(parameters, values):
+    def _dataframes_parameters_validation(parameters: DataFrame):
+        """
+        check if parameters are correctly formatted
+        """
+        par_columns = list(parameters.columns)
+        if not (len(par_columns) == 2
+                and 'Parameter' in par_columns
+                and 'ParValue' in par_columns):
+            raise Exception("Parameters are not formatted as expected")
+
+    @staticmethod
+    def _dataframes_names_validation(parameters, values):
         """
         Check if sensor does not have the same name as any parameter
+        :param: parameters: properly formatted parameters dataframe
+        :values: parameters dataframe or None
         """
         if values is not None:
             # create a set of unique parameters
