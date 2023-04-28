@@ -4,33 +4,46 @@ Application logic for dataframe_handler service
 
 import asyncio
 import logging
-from datetime import datetime
-
 import pandas as pd
+from datetime import datetime
+from multiprocessing import Process
+import uvicorn
+
+
 from fastapi import FastAPI, Form, HTTPException
 from fastiot.core import FastIoTService
-from fastiot.core.time import get_time_now
+from fastiot.env import env_basic
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.data_space_uploader.constants import DataFrameType
-from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.dataframe_handler.env import env_dataframe_handler
 
 
 class DataframeHandlerService(FastIoTService):
 
     def __init__(self, **kwargs):
+        """
+        init the service
+        :param kwargs: arguments for the FastIoTService
+        """
         super().__init__(**kwargs)
 
         self.app = FastAPI()
         self._register_routes()
-        self._server = UvicornAsyncServer(app=self.app, port=env_dataframe_handler.fastapi_port)
+        self._uvicorn_proc = Process(target=uvicorn.run,
+                                     args=(self.app,),
+                                     kwargs={"host": "0.0.0.0", "port": env_dataframe_handler.fastapi_port,
+                                             "log_level": env_basic.log_level},
+                                     daemon=True)
 
-        # define machine for this frontend service
+        # define a test machine for making things
         self.machine = "TEST_MACHINE"
 
     def _register_routes(self):
+        """
+        set up the police and define the methods for fastapi
+        """
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
@@ -42,31 +55,44 @@ class DataframeHandlerService(FastIoTService):
 
     async def _start(self):
         """ Methods to start once the module is initialized """
-        await self._server.up()
+        self._uvicorn_proc.start()
         await asyncio.sleep(0.2)  # time for the server to start
 
     async def _stop(self):
         """ Methods to call on module shutdown """
-        await self._server.down()
+        self._uvicorn_proc.terminate()
 
     async def _handle_post(self, material_id: str = Form(...),
                            start_timestamp: datetime = Form(None),
                            df_type: DataFrameType = Form(...),
                            content: str = Form(...)):
-
+        """
+        accepts messages from DataSpaceUploader
+        :param material_id: unique identifier for the following uploading
+        :param start_timestamp: universal timestamp for parameters if exists
+        :param df_type: the type of the dataframe, which is currently being loaded
+        :param content: a part of the dataframe to upload
+        """
         dataframe = pd.read_json(content).sort_index()
         self._logger.debug(dataframe)
+        # upload dataframe considering their type
         if df_type == DataFrameType.values:
             await self._send_values_things(material_id, dataframe)
         if df_type == DataFrameType.parameters:
             await self._send_parameters_things(material_id, dataframe, start_timestamp)
-
         return "successfully uploaded"
 
     async def _send_parameters_things(self, material_id, dataframe, start_timestamp: datetime):
+        """
+        sends a part of the parameters dataframe via message broker
+        :param material_id: unique identifier for the uploading
+        :param dataframe: parameters dataframe
+        :param start_timestamp: timestamp for all parameters
+        :return:
+        """
         for index, row in dataframe.iterrows():
             row = row.to_dict()  # This will make sure, we have python primitives like int and not np.int64
-            # create thing
+            # create thing from row
             thing = Thing(machine=self.machine,
                           name=row['Parameter'],
                           measurement_id=material_id,
@@ -79,16 +105,22 @@ class DataframeHandlerService(FastIoTService):
                                                  msg=thing)
 
     async def _send_values_things(self, material_id, dataframe):
+        """
+        sends a part of the values dataframe via message broker
+        :param material_id: unique identifier for the uploading
+        :param dataframe: values dataframe
+        """
+        # timestamp is obligatory for the values dataframe
         if 'Timestamp' not in dataframe:
             raise HTTPException("Can't save values dataframe without Timestamp column")
-        # not Timestamp column within 2 columns of the dataframe
+        # find the column with content (not timestamp within 2 columns)
         attr = next(col_name for col_name in dataframe if col_name != 'Timestamp')
-        # create table things from table
+
         for index, row in dataframe.iterrows():
             try:
                 row = row.to_dict()   # This will make sure, we have python primitives like int and not np.int64
                 timestamp = row['Timestamp'].to_pydatetime()
-                # create thing
+                # create thing from row
                 thing = Thing(machine=self.machine,
                               name=attr,
                               measurement_id=material_id,
