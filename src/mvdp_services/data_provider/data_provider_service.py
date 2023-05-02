@@ -222,12 +222,27 @@ class DataProviderService(FastIoTService):
         for asset in self.assets.items():
             asset_entry = AssetEntryDto(asset=AssetCreationRequestDto(
                 id=uuid.uuid4().hex,
-                properties=asset),
+                properties=DataProviderService._serialize_asset(asset)),
                 data_address=DataAddress(
                     properties={"type": "LocalFile", "address": "/Files/test.txt"})
             )
             response = asset_api_instance.create_asset(body=asset_entry)
-            print(response)
+            self._logger.debug(response)
+
+    @staticmethod
+    def _serialize_asset(asset):
+        serialized_asset = dict()
+        asset_name, asset_body = asset
+        DataProviderService._serialize_asset_rec(serialized_asset, asset_body, asset_name)
+        return serialized_asset
+
+    @staticmethod
+    def _serialize_asset_rec(serialized_asset, body, property_name):
+        if not isinstance(body, dict):
+            serialized_asset[property_name] = body
+        else:  # body structure is a dictionary
+            for key, item in body.items():
+                DataProviderService._serialize_asset_rec(serialized_asset, item, property_name + ':' + key)
 
 
 
