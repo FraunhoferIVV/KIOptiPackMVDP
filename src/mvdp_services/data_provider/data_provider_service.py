@@ -219,10 +219,12 @@ class DataProviderService(FastIoTService):
     def _edc_put_assets(self):
         asset_api_instance = AssetApi(self.api_client)
 
-        for asset in self.assets.items():
+        for asset_name, asset_body in self.assets.items():
+            if "asset_id" not in asset_body:
+                asset_body["asset_id"] = uuid.uuid4().hex
             asset_entry = AssetEntryDto(asset=AssetCreationRequestDto(
-                id=uuid.uuid4().hex,
-                properties=DataProviderService._serialize_asset(asset)),
+                id=asset_body["asset_id"],
+                properties=DataProviderService._serialize_asset(asset_name, asset_body)),
                 data_address=DataAddress(
                     properties={"type": "LocalFile", "address": "/Files/test.txt"})
             )
@@ -230,9 +232,8 @@ class DataProviderService(FastIoTService):
             self._logger.debug(response)
 
     @staticmethod
-    def _serialize_asset(asset):
+    def _serialize_asset(asset_name, asset_body):
         serialized_asset = dict()
-        asset_name, asset_body = asset
         DataProviderService._serialize_asset_rec(serialized_asset, asset_body, asset_name)
         return serialized_asset
 
