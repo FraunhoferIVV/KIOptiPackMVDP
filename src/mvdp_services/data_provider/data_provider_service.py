@@ -220,10 +220,8 @@ class DataProviderService(FastIoTService):
         asset_api_instance = AssetApi(self.api_client)
 
         for asset_name, asset_body in self.assets.items():
-            if "asset_id" not in asset_body:
-                asset_body["asset_id"] = uuid.uuid4().hex
             asset_entry = AssetEntryDto(asset=AssetCreationRequestDto(
-                id=asset_body["asset_id"],
+                id=hash(asset_name),
                 properties=DataProviderService._serialize_asset(asset_name, asset_body)),
                 data_address=DataAddress(
                     properties={"type": "LocalFile", "address": "/Files/test.txt"})
