@@ -4,6 +4,7 @@ Application logic for data_provider service
 import asyncio
 import logging
 import time
+import uuid
 from typing import List
 
 import pandas as pd
@@ -17,15 +18,22 @@ from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.data_provider.env import env_data_provider
+from mvdp.edc_management_client.api import ApplicationObservabilityApi, AssetApi
+from mvdp.edc_management_client.api_client import ApiClient
+from mvdp.edc_management_client.configuration import Configuration
+from mvdp.edc_management_client.models import AssetCreationRequestDto, AssetEntryDto, DataAddress
+from mvdp.env import mvdp_env
 
 
 class DataProviderService(FastIoTService):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # init database
         self.mongo_db_client = get_mongodb_client_from_env()
         database = self.mongo_db_client.get_database(env_mongodb.name)
         # potentially load asset from the database (db queries: Asset_x -> [column1, column2, ...])
+        # read configuration
         service_config = read_config(self)
         if not service_config:
             self._logger.error('Please set the config as shown in the documentation! Aborting service!')
@@ -34,10 +42,23 @@ class DataProviderService(FastIoTService):
         self.mongodb_col = database.get_collection(service_config['collection'])
         self._parse_config(service_config)
 
+        # init FastAPI and server
         self.app = FastAPI()
         self._register_routes()
         self.server = UvicornAsyncServer(self.app, port=env_data_provider.fastapi_port)
 
+        # init edc
+        config = Configuration()
+        config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port_2}/api/v1/management"
+        config.verify_ssl = False
+        config.debug = True
+        config.api_key = {'X-Api-Key': 'ApiKeyDefaultValue'}
+
+        self.api_client = ApiClient(config, header_name='X-Api-Key', header_value='ApiKeyDefaultValue')
+
+        self._edc_put_assets()
+
+        # additional
         self.message_received = asyncio.Event()
         self.last_msg = None
 
@@ -100,7 +121,6 @@ class DataProviderService(FastIoTService):
                 else:
                     constraint['values'].append(item)
         return constraint
-
 
     async def _start(self):
         """ Methods to start once the module is initialized """
@@ -195,6 +215,20 @@ class DataProviderService(FastIoTService):
             row_now[thing['name']] = str(thing['value']) + ' ' + str(thing['unit'])  # create new table cell
         rows.append(row_now)  # push the last row
         return rows
+
+    def _edc_put_assets(self):
+        asset_api_instance = AssetApi(self.api_client)
+
+        for asset in self.assets.items():
+            asset_entry = AssetEntryDto(asset=AssetCreationRequestDto(
+                id=uuid.uuid4().hex,
+                properties=asset),
+                data_address=DataAddress(
+                    properties={"type": "LocalFile", "address": "/Files/test.txt"})
+            )
+            response = asset_api_instance.create_asset(body=asset_entry)
+            print(response)
+
 
 
 if __name__ == '__main__':
