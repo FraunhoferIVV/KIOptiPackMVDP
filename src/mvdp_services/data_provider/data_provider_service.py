@@ -226,7 +226,11 @@ class DataProviderService(FastIoTService):
                 data_address=DataAddress(
                     properties={"type": "LocalFile", "address": "/Files/test.txt"})
             )
-            response = asset_api_instance.create_asset(body=asset_entry)
+            # trying to update an existing asset, otherwise create a new asset
+            try:
+                response = asset_api_instance.update_asset(body=asset_entry)
+            except TypeError:
+                response = asset_api_instance.create_asset(body=asset_entry)
             self._logger.debug(response)
 
     @staticmethod
