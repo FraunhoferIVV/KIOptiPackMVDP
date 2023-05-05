@@ -6,7 +6,7 @@ MVDP_DATAFRAME_HANDLER_PORT = 'MVDP_DATAFRAME_HANDLER_PORT'
 class DataframeHandlerModuleEnv:
 
     @property
-    def fastapi_port(self) -> int:
+    def port(self) -> int:
         """ ..envvar:: MVDP_DATAFRAME_HANDLER_PORT
 
         Set the port for the FastAPI REST interface in the dataframe_handler service.

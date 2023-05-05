@@ -1,1 +1,1 @@
-from mvdp.data_space_uploader import DataSpaceUploader
+from mvdp.data_space_uploader import data_space_uploader

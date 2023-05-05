@@ -1,6 +1,7 @@
 import os
 
 MVDP_EDC_HOST = 'MVDP_EDC_HOST'
+MVDP_EDC_API_KEY = 'MVDP_EDC_API_KEY'
 MVDP_EDC_PORT = 'MVDP_EDC_PORT'
 MVDP_EDC_PORT_2 = 'MVDP_EDC_PORT_2'
 MVDP_EDC_PORT_3 = 'MVDP_EDC_PORT_3'
@@ -13,6 +14,10 @@ class MVDPEnv:
     @property
     def edc_host(self) -> str:
         return os.environ.get(MVDP_EDC_HOST)
+
+    @property
+    def edc_api_key(self) -> str:
+        return os.environ.get(MVDP_EDC_API_KEY, 'ApiKeyDefaultValue')
 
     @property
     def edc_port(self) -> int:

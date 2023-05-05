@@ -2,19 +2,15 @@
 Application logic for frontend service
 """
 
-import asyncio
+import io
 import logging
 import os
-import io
-import pandas as pd
-import json
-
 from typing import Optional
 
+import pandas as pd
 from fastapi import FastAPI, File, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastiot.core import FastIoTService, subscribe, loop
-from fastiot.core.core_uuid import get_uuid
+from fastiot.core import FastIoTService
 from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
@@ -30,10 +26,7 @@ class FrontendService(FastIoTService):
 
         self.app = FastAPI()
         self._register_routes()
-        self.server = UvicornAsyncServer(self.app, port=env_frontend.fastapi_port)
-
-        self.message_received = asyncio.Event()
-        self.last_msg = None
+        self.server = UvicornAsyncServer(self.app, port=env_frontend.port)
 
         # define machine for this frontend service
         self.machine = "TEST_MACHINE"
@@ -47,7 +40,6 @@ class FrontendService(FastIoTService):
             allow_headers=["*"],
         )
 
-        self.app.get("/api/get_some_data")(self._handle_get)
         self.app.post("/api/post_some_data")(self._handle_post)
         try:
             self.app.mount("/",
@@ -65,26 +57,11 @@ class FrontendService(FastIoTService):
         """ Methods to call on module shutdown """
         await self.server.down()
 
-    """
-    Below are some sample functions for interaction with FastAPI and its REST Interface (_handle_get and _handle_post) 
-    and for FastIoT and the nats message broker (_produce, _consume)
-    """
-
-    def _handle_get(self):
-        """ Simple method to reply to a get request """
-        return json.dumps(['id1', 'id2', 'id3'])
-
     async def _handle_post(self, data_file: bytes = File(),
                            file_type: str = Form(...),
                            data_delimiter: str = Form(...),
                            decimal_delimiter: str = Form(...),
                            material_id: Optional[str] = Form(None)):
-        """
-        Simple handling of Post Request
-
-        the = Body(...) is needed as we don’t use pydantic classes,
-        s. https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter for more details
-        """
 
         data_frame = self._parse_file(data_delimiter, data_file, decimal_delimiter, file_type)
         timestamp_in_table = 'Timestamp' in data_frame
@@ -118,7 +95,8 @@ class FrontendService(FastIoTService):
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
 
-    def _data_frame_validation(self, data_frame, material_id, timestamp_in_table):
+    @staticmethod
+    def _data_frame_validation(data_frame, material_id, timestamp_in_table):
         if len(data_frame.columns) <= 1:
             raise HTTPException(status_code=500, detail='Potentially wrong configuration!')
         material_id_exists = material_id or "Material_ID" in data_frame
@@ -131,7 +109,8 @@ class FrontendService(FastIoTService):
                 raise HTTPException(status_code=500, detail="Could not parse datetimes")
         return timestamp_in_table
 
-    def _parse_file(self, data_delimiter, data_file, decimal_delimiter, file_type):
+    @staticmethod
+    def _parse_file(data_delimiter, data_file, decimal_delimiter, file_type):
         decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
         data_delimiters = {'comma': ',', 'semicolon': ';'}
         try:
@@ -142,7 +121,7 @@ class FrontendService(FastIoTService):
             elif file_type == '.xlsx':
                 data_frame = pd.read_excel(data_file)
             else:
-                raise Exception('Unknown extension')
+                raise RuntimeError('Unknown extension')
         except:
             raise HTTPException(status_code=500, detail='Could not parse the file!')
         return data_frame

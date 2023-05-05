@@ -6,7 +6,7 @@ MVDP_FRONTEND_PORT = 'MVDP_FRONTEND_PORT'
 class FrontendModuleEnv:
 
     @property
-    def fastapi_port(self) -> int:
+    def port(self) -> int:
         """ ..envvar:: MVDP_FRONTEND_PORT
 
         Set the port for the FastAPI REST interface in the frontend service.

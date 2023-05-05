@@ -1,14 +1,12 @@
 """
 Application logic for data_provider service
 """
-import asyncio
 import logging
 import time
-import uuid
 from typing import List
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastiot.core import FastIoTService
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
@@ -16,13 +14,14 @@ from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
 from fastiot.util.read_yaml import read_config
 from starlette.middleware.cors import CORSMiddleware
 
-from mvdp.uvicorn_server import UvicornAsyncServer
-from mvdp_services.data_provider.env import env_data_provider
-from mvdp.edc_management_client.api import ApplicationObservabilityApi, AssetApi
+from mvdp.edc_management_client.api import AssetApi
 from mvdp.edc_management_client.api_client import ApiClient
 from mvdp.edc_management_client.configuration import Configuration
 from mvdp.edc_management_client.models import AssetCreationRequestDto, AssetEntryDto, DataAddress
-from mvdp.env import mvdp_env
+from mvdp.edc_management_client.rest import ApiException
+from mvdp.env import mvdp_env, MVDP_EDC_HOST
+from mvdp.uvicorn_server import UvicornAsyncServer
+from mvdp_services.data_provider.env import env_data_provider
 
 
 class DataProviderService(FastIoTService):
@@ -30,8 +29,8 @@ class DataProviderService(FastIoTService):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # init database
-        self.mongo_db_client = get_mongodb_client_from_env()
-        database = self.mongo_db_client.get_database(env_mongodb.name)
+        mongo_db_client = get_mongodb_client_from_env()
+        database = mongo_db_client.get_database(env_mongodb.name)
         # potentially load asset from the database (db queries: Asset_x -> [column1, column2, ...])
         # read configuration
         service_config = read_config(self)
@@ -45,22 +44,23 @@ class DataProviderService(FastIoTService):
         # init FastAPI and server
         self.app = FastAPI()
         self._register_routes()
-        self.server = UvicornAsyncServer(self.app, port=env_data_provider.fastapi_port)
+        self.server = UvicornAsyncServer(self.app, port=env_data_provider.port)
 
         # init edc
-        config = Configuration()
-        config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port_2}/api/v1/management"
-        config.verify_ssl = False
-        config.debug = True
-        config.api_key = {'X-Api-Key': 'ApiKeyDefaultValue'}
+        if mvdp_env.edc_host:
+            self.api_client = self._init_edc()
+            self._edc_put_assets()
+        else:
+            self._logger.info("No host for EDC configured with environment variable %s. Not uploading assets.",
+                              MVDP_EDC_HOST)
 
-        self.api_client = ApiClient(config, header_name='X-Api-Key', header_value='ApiKeyDefaultValue')
+    async def _start(self):
+        """ Methods to start once the module is initialized """
+        await self.server.up()
 
-        self._edc_put_assets()
-
-        # additional
-        self.message_received = asyncio.Event()
-        self.last_msg = None
+    async def _stop(self):
+        """ Methods to call on module shutdown """
+        await self.server.down()
 
     def _register_routes(self):
         self.app.add_middleware(
@@ -73,6 +73,16 @@ class DataProviderService(FastIoTService):
         self.app.get("/assets/{asset_name}")(self._handle_get)
         # no mounting apps
 
+    @staticmethod
+    def _init_edc():
+        config = Configuration()
+        config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port_2}/api/v1/management"
+        config.verify_ssl = False
+        config.debug = True
+        config.api_key = {'X-Api-Key': mvdp_env.edc_api_key}
+
+        return ApiClient(config, header_name='X-Api-Key', header_value=mvdp_env.edc_api_key)
+
     def _parse_config(self, config):
         self.assets = {}
         if 'assets' not in config.keys():
@@ -84,8 +94,7 @@ class DataProviderService(FastIoTService):
             for asset_attr, asset_attr_content in asset_content.items():
                 if asset_attr == 'constraints':
                     self.assets[asset_name]['constraints'] = (
-                        DataProviderService._calculate_constraints(asset_attr_content)
-                    )
+                        DataProviderService._calculate_constraints(asset_attr_content))
                 else:
                     self.assets[asset_name][asset_attr] = asset_attr_content
 
@@ -122,14 +131,6 @@ class DataProviderService(FastIoTService):
                     constraint['values'].append(item)
         return constraint
 
-    async def _start(self):
-        """ Methods to start once the module is initialized """
-        await self.server.up()
-
-    async def _stop(self):
-        """ Methods to call on module shutdown """
-        await self.server.down()
-
     def _handle_get(self, asset_name: str,
                     material_id: list = Query([]),
                     timestamp: list = Query([]),
@@ -137,8 +138,8 @@ class DataProviderService(FastIoTService):
                     value: list = Query([]),
                     unit: list = Query([]),
                     machine: list = Query([])):
-        if asset_name not in list(self.assets.keys()):
-            raise HTTPException(status_code=500, detail='Asset not configured!')
+        if asset_name not in self.assets:
+            raise HTTPException(status_code=404, detail='Asset not configured!')
         # TODO: enable one bounded range constraints + certain time ago
         # TODO: enable url interval queries
         # create custom_query

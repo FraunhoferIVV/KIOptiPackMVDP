@@ -12,6 +12,7 @@ import uvicorn
 
 from fastapi import FastAPI, Form, HTTPException
 from fastiot.core import FastIoTService
+from fastiot.core.time import get_time_now
 from fastiot.env import env_basic
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
@@ -33,7 +34,7 @@ class DataframeHandlerService(FastIoTService):
         self._register_routes()
         self._uvicorn_proc = Process(target=uvicorn.run,
                                      args=(self.app,),
-                                     kwargs={"host": "0.0.0.0", "port": env_dataframe_handler.fastapi_port,
+                                     kwargs={"host": "0.0.0.0", "port": env_dataframe_handler.port,
                                              "log_level": env_basic.log_level},
                                      daemon=True)
 
@@ -57,6 +58,8 @@ class DataframeHandlerService(FastIoTService):
         """ Methods to start once the module is initialized """
         self._uvicorn_proc.start()
         await asyncio.sleep(0.2)  # time for the server to start
+        await self.broker_connection.publish(Thing.get_subject('mine'),
+                                             msg=Thing(value=1, timestamp=get_time_now(), machine='1', name="one"))
 
     async def _stop(self):
         """ Methods to call on module shutdown """
