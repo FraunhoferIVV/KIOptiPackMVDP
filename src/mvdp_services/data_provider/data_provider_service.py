@@ -230,7 +230,7 @@ class DataProviderService(FastIoTService):
             # trying to update an existing asset, otherwise create a new asset
             try:
                 response = asset_api_instance.update_asset(body=asset_entry, asset_id=asset_id)
-            except TypeError:
+            except ApiException:
                 response = asset_api_instance.create_asset(body=asset_entry)
             self._logger.debug(response)
 
