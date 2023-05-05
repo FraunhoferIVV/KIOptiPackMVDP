@@ -220,15 +220,16 @@ class DataProviderService(FastIoTService):
         asset_api_instance = AssetApi(self.api_client)
 
         for asset_name, asset_body in self.assets.items():
+            asset_id = hash(asset_name)
             asset_entry = AssetEntryDto(asset=AssetCreationRequestDto(
-                id=hash(asset_name),
+                id=asset_id,
                 properties=DataProviderService._serialize_asset(asset_name, asset_body)),
                 data_address=DataAddress(
                     properties={"type": "LocalFile", "address": "/Files/test.txt"})
             )
             # trying to update an existing asset, otherwise create a new asset
             try:
-                response = asset_api_instance.update_asset(body=asset_entry)
+                response = asset_api_instance.update_asset(body=asset_entry, asset_id=asset_id)
             except TypeError:
                 response = asset_api_instance.create_asset(body=asset_entry)
             self._logger.debug(response)
