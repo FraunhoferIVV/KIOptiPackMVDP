@@ -1,0 +1,87 @@
+// Your variable overrides
+$body-bg: #fff;
+
+$enable-shadows: true;
+$enable-gradients: true;
+
+$primary: #12977a;
+$secondary: #305b92;
+$blue: #305b92;
+$red: #c20e1a;
+$orange: #d0661c;
+$yellow: #f9dc06;
+$green: #94a42a;
+$teal: #6dbfa9;
+$indigo: #1b3668;
+$warning: $orange;
+$info: $teal;
+$gray-dark: #343a40;
+$gray: #527b72;
+$dark: #0d5645;
+
+
+.headline {
+  background: #{$teal};
+  background: linear-gradient(90deg, #{$primary} 0%, #fff 100%);
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.headline h1 {
+  display: inline-block;
+  margin-left: 20px;
+  font-size: 2.3rem;
+  color: black;
+}
+
+.headline img {
+  float: right;
+  height: 52px;
+}
+
+.router-link-active {
+  font-weight: bold;
+}
+
+$bs-nav-tabs-border-color: #{$primary};
+$bs-nav-tabs-border-width: 2px;
+
+
+div.content {
+  display: block;
+  height: 100%;
+  overflow: auto;
+  padding: 25px;
+}
+
+div.content p {
+  max-width: 760px;
+  margin-bottom: 5px;
+}
+
+.footline {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: inline-block;
+  background: #fff;
+  border-top: 5px solid #{$primary};
+  padding-top: 10px;
+  padding-right: 30px;
+  padding-left: 30px;
+}
+
+.footline span {
+  font-size: 0.8em;
+  color: #{$gray-dark};
+  position: absolute;
+  bottom: 3px;
+  display: block;
+}
+
+.footline img {
+  float: right;
+  padding-right: 30px;
+  display: block;
+}

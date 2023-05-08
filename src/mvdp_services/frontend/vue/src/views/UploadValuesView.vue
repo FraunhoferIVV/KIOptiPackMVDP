@@ -1,6 +1,6 @@
 <template>
     <div class="file-upload">
-        <h1 class="file-upload__title">Upload XLSX- or CSV-File</h1>
+        <h2 class="file-upload__title">Upload XLSX- or CSV-File</h2>
         <div class="file-upload__wrapper">
             <div class="file-upload__item form-group">
                 <input type="file" class="file-upload__input form-control" id="file-uploader" @change="readFile" />
@@ -244,17 +244,14 @@ export default {
 }
 </script>
 
-<style scoped>
-
-    .file-upload {
-        margin: 20px;
-    }
+<style scoped lang="scss">
+    @import '../assets/styles/style.scss';
 
     .file-upload__wrapper {
         display: flex;
         flex-direction: column;
         width: 640px;
-        border: 1px solid black;
+        border: 1px solid #{$primary};
         border-radius: 5px;
         padding: 10px;
     }
@@ -269,7 +266,6 @@ export default {
         width: 500px;
     }
     .file-upload__message {
-        font-size: 14px;
         white-space: pre;
     }
 
@@ -278,11 +274,11 @@ export default {
     }
 
     .file-upload__message--success {
-        color: green;
+        color: #{$primary};
     }
 
     .file-upload__message--warning {
-        color: orangered;
+        color: #{$warning};
     }
 
     .file-upload__submit-button {
@@ -300,7 +296,6 @@ export default {
 
     .radio-list__item-name {
         font-weight: bold;
-        font-size: 20px;
     }
 
     .dropdown__description {
@@ -321,7 +316,7 @@ export default {
     }
 
     .dropdown__status--ok {
-        color: green;
+        color: #{$primary};
     }
 
     .dropdown__status--wrong {

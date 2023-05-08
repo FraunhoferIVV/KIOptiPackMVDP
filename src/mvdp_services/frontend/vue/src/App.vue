@@ -7,36 +7,32 @@ import "bootstrap"
 
 <template>
   <header>
-    <nav>
-      <RouterLink class="nav-item" to="/">Start</RouterLink>
-      <RouterLink class="nav-item" to="/upload_values">Upload values</RouterLink>
-      <RouterLink class="nav-item" to="/edit_values">Edit values</RouterLink>
-      <!--
-      <RouterLink class="nav-item" to="/upload_material">Upload material</RouterLink>
-      -->
-    </nav>
+    <div class="headline">
+        <img src="./assets/kioptipack-logo.svg" alt=""  style="float: left;">
+        <h1>Minimum Viable Dataspace Participant</h1>
+        <img src="./assets/ivv-logo.png" alt="" style="float: right;">
+    </div>
+
+    <ul class="nav nav-tabs">
+      <li class="nav-item"><RouterLink class="nav-link" to="/">Start</RouterLink></li>
+      <li class="nav-item"><RouterLink class="nav-link" to="/upload">Upload</RouterLink></li>
+      <li class="nav-item"><RouterLink class="nav-link" to="/edit_values">Edit values</RouterLink>
+    </ul>
   </header>
-  <RouterView />
+
+  <div class="content">
+    <RouterView />
+  </div>
+
+  <div class="footline">
+    <span>© Fraunhofer Institut für Verfahrenstechnik und Verpackung IVV, 2023</span>
+    <img src="./assets/LOGO_BMBF.png" height="52" alt="BMWK">
+    <img src="./assets/LOGO_FONA.jpg" height="48" alt="FONA">
+  </div>
+
 </template>
 
-<style scoped>
-  nav {
-    background-color: #25be6b;
-    padding: 10px;
-    margin-bottom: 10px;
-
-  }
-  .nav-item{
-    margin-right: 10px;
-    padding: 5px 10px;
-    color: #260F43;
-    font-size: 24px;
-    font-weight: bold;
-    text-decoration: none;
-    border-radius: 5px;
-  }
-  .nav-item:hover {
-    background-color: #6CDEC1;
-    color: #4B1E83;
-  }
+<style lang="scss">
+ @import './assets/styles/style.scss';
+ @import 'bootstrap/scss/bootstrap.scss';
 </style>
