@@ -17,6 +17,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.frontend.env import env_frontend
+from mvdp_services.frontend.table_handler import TableHandler
 
 
 class FrontendService(FastIoTService):
@@ -41,6 +42,10 @@ class FrontendService(FastIoTService):
         )
 
         self.app.post("/api/post_some_data")(self._handle_post)
+
+        table_editor = TableHandler()
+        self.app.post("/api/table/edit")(table_editor.edit_data)
+
         try:
             self.app.mount("/",
                            StaticFiles(directory=os.path.join(os.path.dirname(__file__), "vue", "dist"),

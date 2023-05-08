@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, Query, Response
 from fastiot.core import FastIoTService
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
+from fastiot.msg import Thing
 from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
 from fastiot.util.read_yaml import read_config
 from starlette.middleware.cors import CORSMiddleware
@@ -194,7 +195,7 @@ class DataProviderService(FastIoTService):
         return {}
 
     @staticmethod
-    def _things_to_rows(things: List):
+    def _things_to_rows(things: List[Thing]):
         # empty list (exception state)
         if not things:
             return []
