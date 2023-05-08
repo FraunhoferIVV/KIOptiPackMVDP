@@ -15,7 +15,7 @@ import "bootstrap"
 
     <ul class="nav nav-tabs">
       <li class="nav-item"><RouterLink class="nav-link" to="/">Start</RouterLink></li>
-      <li class="nav-item"><RouterLink class="nav-link" to="/upload">Upload</RouterLink></li>
+      <li class="nav-item"><RouterLink class="nav-link" to="/upload_values">Upload</RouterLink></li>
       <li class="nav-item"><RouterLink class="nav-link" to="/edit_values">Edit values</RouterLink></li>
     </ul>
   </header>
