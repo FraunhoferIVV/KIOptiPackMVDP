@@ -9,7 +9,11 @@ import "bootstrap"
   <header>
     <nav>
       <RouterLink class="nav-item" to="/">Start</RouterLink>
-      <RouterLink class="nav-item" to="/upload">Upload</RouterLink>
+      <RouterLink class="nav-item" to="/upload_values">Upload values</RouterLink>
+      <RouterLink class="nav-item" to="/edit_values">Edit values</RouterLink>
+      <!--
+      <RouterLink class="nav-item" to="/upload_material">Upload material</RouterLink>
+      -->
     </nav>
   </header>
   <RouterView />
