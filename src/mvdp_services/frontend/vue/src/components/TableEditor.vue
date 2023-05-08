@@ -1,10 +1,6 @@
 <script lang="ts">
-    import TableEditor from '../components/TableEditor.vue'
 
     export default {
-        components: {
-            TableEditor
-        },
         data() {
             return {
 
@@ -14,7 +10,7 @@
 </script>
 
 <template>
-    <TableEditor />
+    <p>Hello World!</p>
 </template>
 
 <style scoped>
