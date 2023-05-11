@@ -48,7 +48,7 @@ class FrontendService(FastIoTService):
 
         try:
             self.app.mount("/",
-                           StaticFiles(directory=os.path.join(os.path.dirname(__file__), "../vue", "dist"),
+                           StaticFiles(directory=os.path.join(os.path.dirname(__file__), "vue", "dist"),
                                        html=True),
                            name="static")
         except RuntimeError:
