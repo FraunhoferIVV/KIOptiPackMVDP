@@ -67,6 +67,7 @@
 
 <script lang="ts">
 import axios from 'axios';
+import {constants} from "@/constants";
 import { defineComponent } from 'vue';
 
 export default defineComponent({
@@ -155,7 +156,7 @@ export default defineComponent({
                     console.log(pair[0]+ ', ' + pair[1]); 
                 }
                 // post formData
-                const postUrl = 'http://localhost:5478/api/post_some_data';
+                const postUrl = constants.restBaseUrl + 'api/post_some_data';
                 axios.post(postUrl, formData, {headers: {
                     "Content-Type": "multipart/form-data"
                     }}

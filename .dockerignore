@@ -6,3 +6,5 @@ docs
 build
 dist
 .docker-cache
+src/mvdp_services/frontend/vue/dist
+src/mvdp_services/frontend/vue/node_modules
