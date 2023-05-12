@@ -43,7 +43,7 @@ class DataProviderService(FastIoTService):
         self._parse_config(service_config)
 
         # init FastAPI and server
-        self.app = FastAPI()
+        self.app = FastAPI(root_path=env_data_provider.base_path)
         self._register_routes()
         self.server = UvicornAsyncServer(self.app, port=env_data_provider.port)
 

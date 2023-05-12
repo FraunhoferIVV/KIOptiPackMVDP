@@ -30,7 +30,7 @@ class DataframeHandlerService(FastIoTService):
         """
         super().__init__(**kwargs)
 
-        self.app = FastAPI()
+        self.app = FastAPI(root_path=env_dataframe_handler.base_path)
         self._register_routes()
         self._uvicorn_proc = Process(target=uvicorn.run,
                                      args=(self.app,),
