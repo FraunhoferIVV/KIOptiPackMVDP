@@ -170,7 +170,8 @@ class DataProviderService(FastIoTService):
         data_frame = data_frame[list(data_frame.columns.values)[:2] +
                                 sorted(list(data_frame.columns.values)[2:])]
         self._logger.debug('\n' + str(data_frame))
-        return Response(data_frame.to_json(orient="records", date_format="iso", force_ascii=False))
+        return Response(content=data_frame.to_json(orient="records", date_format="iso", force_ascii=False),
+                        media_type='application/json')
 
     @staticmethod
     def _build_query(constraints):
