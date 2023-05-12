@@ -1,0 +1,15 @@
+infrastructure-services:
+  nats:
+  mongodb:
+
+services:
+  data_provider:
+  frontend:
+  object_storage:
+    image: fastiot/object_storage
+
+deployment_target:
+  hosts:
+    KIOptiPack-Data2:
+      ip: 192.168.23.22
+  remote_user: ubuntu

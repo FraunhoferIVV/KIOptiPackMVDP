@@ -1,0 +1,15 @@
+search_index:
+  - measurement_id, _timestamp
+  - name
+collection: 'thing'
+assets:
+  - Full:
+      description: "Complete Data"
+      policy: default
+      constraints: {}
+
+
+# each constraint attribute is a list of possible values and intervals (start, end) (default order)
+# for all possible values don't specify the constraint (or set another False value)
+# columns represents thing names
+# chose appropriate types for thing attributes! (only timestamp converted automatically)
