@@ -1,25 +1,3 @@
-<script lang="ts">
-import { defineComponent } from 'vue';
-import Vue3EasyDataTable from 'vue3-easy-data-table';
-import 'vue3-easy-data-table/dist/style.css';
-
-// using vue3-easy-data-table
-export default defineComponent({
-    components: {
-        'EasyDataTable': Vue3EasyDataTable
-    },
-    data() {
-        return {
-        }
-    },
-    computed: {
-    },
-    methods: {
-    }
-})
-
-</script>
-
 <script setup lang="ts">
 import type { Header, Item } from "vue3-easy-data-table";
 

@@ -67,8 +67,9 @@
 
 <script lang="ts">
 import axios from 'axios';
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
     mounted() {
         this.loadMaterialOptions()
     },
@@ -241,7 +242,7 @@ export default {
             
         }
     }
-}
+})
 </script>
 
 <style scoped lang="scss">
