@@ -22,6 +22,7 @@ export default defineComponent({
     },
     data() {
         return {
+            
         }
     },
     computed: {
@@ -30,16 +31,34 @@ export default defineComponent({
     }
 })
 
+/* 
+table example
+const headers : Header[] = [
+                { text: "Sensor1", value: 's1'},
+                { text: "Sensor2", value: 's2'}
+            ]
+            const items : Item[] = [
+                { s1: 1, s2: 2},
+                { s1: 3, s2: 4}
+            ]
+            const table = {
+                headers: headers,
+                items: items,
+            }
+            return table
+*/
+
 </script>
 
-<script setup lang="ts">
-
-</script>
 
 <template>
     <EasyDataTable
         :headers="table.headers"
         :items="table.items"
+        show-index
+        alternating
+        border-cell
+        buttons-pagination
     />
 </template>
 

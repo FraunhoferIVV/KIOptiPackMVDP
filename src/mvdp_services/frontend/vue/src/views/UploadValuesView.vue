@@ -1,5 +1,5 @@
 <template>
-    <div v-if="mode=='upload'" class="file-upload">
+    <div class="file-upload">
         <h2 class="file-upload__title">Upload XLSX- or CSV-File</h2>
         <div class="file-upload__wrapper">
             <div class="file-upload__item form-group">
@@ -55,9 +55,6 @@
                 
             </div>
             <div class="file-upload__item">
-                <button class="file-upload__submit-button btn btn-primary btn-lg" @click="editFile">Edit Table</button>
-            </div>
-            <div class="file-upload__item">
                 <button class="file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Upload</button>
             </div>
             <div class="file-upload__item">
@@ -66,7 +63,6 @@
         </div>
     </div>
 
-    <EditTable v-if="mode=='edit'" :table="tableToEdit"/>
 </template>
 
 
@@ -78,9 +74,7 @@ import { defineComponent } from 'vue';
 import EditTable from '@/components/EditTable.vue'
 
 import type MessageType from '@/types/MessageType'
-import type ModeType from '@/types/ModeType'
-import type TableType from '@/types/TableType'
-import type { Header, Item } from "vue3-easy-data-table";
+
 
 
 export default defineComponent({
@@ -92,7 +86,6 @@ export default defineComponent({
     },
     data() {           
         return {
-            mode: 'upload' as ModeType,
             dataFile: {} as File,
             fileType: '',
             uploadMessage: {
@@ -135,27 +128,6 @@ export default defineComponent({
                 'file-upload__message--success': this.uploadMessage.type == 'success',
                 'file-upload__message--warning': this.uploadMessage.type == 'warning',
             }
-        },
-        tableToEdit() : TableType {
-            /*
-            make a get request on the server (parse dataFile);
-            server responses with a ready to edit table (change mode back and throw an error if the repsponse in an error)
-            prepare the table for the editing component
-            */
-            // create a dummy table
-            const headers : Header[] = [
-                { text: "Sensor1", value: 's1'},
-                { text: "Sensor2", value: 's2'}
-            ]
-            const items : Item[] = [
-                { s1: 1, s2: 2},
-                { s1: 3, s2: 4}
-            ]
-            const table = {
-                headers: headers,
-                items: items,
-            }
-            return table
         }
     },
     methods: {
@@ -218,11 +190,6 @@ export default defineComponent({
                         })
             }
 
-        },
-        editFile() {
-            if (this.fileIsValid()) { 
-                this.mode = 'edit'
-            }
         },  
         checkExtension() {
             try {
@@ -288,6 +255,11 @@ export default defineComponent({
 
 <style scoped lang="scss">
     @import '../assets/styles/style.scss';
+
+    .file-upload__editor {
+        width: 100%;
+        height: 100%
+    }
 
     .file-upload__wrapper {
         display: flex;
