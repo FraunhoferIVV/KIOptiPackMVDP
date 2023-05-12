@@ -1,0 +1,16 @@
+{
+  "include": [
+    {
+      "participant": "company1",
+      "region": "eu",
+      "country": "FR",
+      "address": "10.62.13.226"
+    },
+    {
+      "participant": "company2",
+      "region": "eu",
+      "country": "DE",
+      "address": "10.62.13.227"
+    }
+  ]
+}

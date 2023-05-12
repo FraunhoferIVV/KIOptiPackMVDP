@@ -1,0 +1,10 @@
+infrastructure-services:
+  edc:
+
+services: {}
+
+deployment_target:
+  hosts:
+    KIOptiPack-EDC-DMZ:
+      ip: 153.96.230.41
+  remote_user: ubuntu

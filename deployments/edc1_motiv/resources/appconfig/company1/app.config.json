@@ -1,0 +1,7 @@
+{
+  "apiKey": "ApiKeyDefaultValue",
+  "dataManagementApiUrl": "http://192.168.23.21:5879/api/v1/data",
+  "storageAccount": "company1assets",
+  "storageExplorerLinkTemplate": "storageexplorer://v=1",
+  "theme": "theme-1"
+}

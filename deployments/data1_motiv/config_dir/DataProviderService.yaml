@@ -1,0 +1,43 @@
+search_index:
+  - measurement_id, _timestamp
+  - name
+collection: 'thing'
+assets:
+  - Asset_1:
+      description: "Asset Sensor_B"
+      policy: default
+      constraints:
+        columns:
+          - "Sensor_B"
+        measurement_id:
+        timestamp:
+          - interval:
+              start: 09/19/22 13:55:10
+              end: 09/19/22 13:55:30
+          - 09/19/22 13:55:02
+  - Asset_2:
+      description: "Asset sensors A and C"
+      policy: default
+      constraints:
+        columns:
+          - "Sensor_A"
+          - "Sensor_C"
+        measurement_id:
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+        value:
+          - interval:
+              start: 12
+              end: 32
+  - Asset_3:
+      description: "Asset for small custom upload"
+      policy: default
+      constraints:
+        columns: ["Name", "Wert1"]
+
+# each constraint attribute is a list of possible values and intervals (start, end) (default order)
+# for all possible values don't specify the constraint (or set another False value)
+# columns represents thing names
+# chose appropriate types for thing attributes! (only timestamp converted automatically)
