@@ -3,6 +3,7 @@ Application logic for data_provider service
 """
 import logging
 import time
+from copy import copy
 
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastiot.core import FastIoTService
@@ -68,7 +69,8 @@ class DataProviderService(FastIoTService):
             allow_methods=['GET'],
             allow_headers=["*"],
         )
-        self.app.get("/assets/{asset_name}")(self._handle_get)
+        self.app.get("/assets")(self._list_assets)
+        self.app.get("/assets/{asset_name}")(self._serve_asset)
         # no mounting apps
 
     def _parse_config(self, config):
@@ -86,13 +88,28 @@ class DataProviderService(FastIoTService):
                 else:
                     self.assets[asset_name][asset_attr] = asset_attr_content
 
-    def _handle_get(self, asset_name: str,
-                    material_id: list = Query([]),
-                    timestamp: list = Query([]),
-                    columns: list = Query([]),
-                    value: list = Query([]),
-                    unit: list = Query([]),
-                    machine: list = Query([])):
+    def _list_assets(self):
+        """ List all assets configured in the dataspace participant """
+        result = {}
+        for name, config in self.assets.items():
+            result[name] = copy(config)
+            columns = config['constraints'].get('columns')
+            result[name]['columns'] = columns['values'] if columns else "all available columns"
+            result[name].pop("constraints")
+
+        return result
+
+    def _serve_asset(self, asset_name: str,
+                     material_id: list = Query([]),
+                     timestamp: list = Query([]),
+                     columns: list = Query([]),
+                     value: list = Query([]),
+                     unit: list = Query([]),
+                     machine: list = Query([])):
+        """ Receive a single, specified asset.
+
+        Optionally set some limits to filter the provided data.
+        """
         if asset_name not in self.assets:
             raise HTTPException(status_code=404, detail='Asset not configured!')
         # TODO: enable one bounded range constraints + certain time ago
