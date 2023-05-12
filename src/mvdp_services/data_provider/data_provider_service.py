@@ -3,26 +3,25 @@ Application logic for data_provider service
 """
 import logging
 import time
-from typing import List
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastiot.core import FastIoTService
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
-from fastiot.msg import Thing
+
 from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
 from fastiot.util.read_yaml import read_config
 from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.edc_management_client.api import AssetApi
-from mvdp.edc_management_client.api_client import ApiClient
-from mvdp.edc_management_client.configuration import Configuration
+
 from mvdp.edc_management_client.models import AssetCreationRequestDto, AssetEntryDto, DataAddress
 from mvdp.edc_management_client.rest import ApiException
 from mvdp.env import mvdp_env, MVDP_EDC_HOST
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.data_provider.env import env_data_provider
+from mvdp.tools.dataprovider_functions import *
 
 
 class DataProviderService(FastIoTService):
@@ -49,7 +48,7 @@ class DataProviderService(FastIoTService):
 
         # init edc
         if mvdp_env.edc_host:
-            self.api_client = self._init_edc()
+            self.api_client = init_edc()
             self._edc_put_assets()
         else:
             self._logger.info("No host for EDC configured with environment variable %s. Not uploading assets.",
@@ -74,16 +73,6 @@ class DataProviderService(FastIoTService):
         self.app.get("/assets/{asset_name}")(self._handle_get)
         # no mounting apps
 
-    @staticmethod
-    def _init_edc():
-        config = Configuration()
-        config.host = f"http://{mvdp_env.edc_host}:{mvdp_env.edc_port_2}/api/v1/management"
-        config.verify_ssl = False
-        config.debug = True
-        config.api_key = {'X-Api-Key': mvdp_env.edc_api_key}
-
-        return ApiClient(config, header_name='X-Api-Key', header_value=mvdp_env.edc_api_key)
-
     def _parse_config(self, config):
         self.assets = {}
         if 'assets' not in config.keys():
@@ -95,42 +84,9 @@ class DataProviderService(FastIoTService):
             for asset_attr, asset_attr_content in asset_content.items():
                 if asset_attr == 'constraints':
                     self.assets[asset_name]['constraints'] = (
-                        DataProviderService._calculate_constraints(asset_attr_content))
+                        calculate_constraints(asset_attr_content))
                 else:
                     self.assets[asset_name][asset_attr] = asset_attr_content
-
-    @staticmethod
-    def _calculate_constraints(constraints_object):
-        constraints = {}
-        for constraint_attr, constraint_content in constraints_object.items():
-            constraints[constraint_attr] = (
-                DataProviderService._calculate_single_constraint(constraint_attr, constraint_content)
-            )
-        return constraints
-
-    @staticmethod
-    def _calculate_single_constraint(attribute: str, constraint_values : list):
-        if not constraint_values:
-            return None
-        constraint = {
-            'intervals': [],
-            'values': []
-        }
-        if attribute == 'timestamp':  # include special datetime conversion
-            for item in constraint_values:
-                if isinstance(item, dict) and 'interval' in item.keys():
-                    constraint['intervals'].append((pd.Timestamp(item['interval']['start']).to_pydatetime(),
-                                                    pd.Timestamp(item['interval']['end']).to_pydatetime()))
-                else:
-                    constraint['values'].append(pd.Timestamp(item).to_pydatetime())
-        else:
-            for item in constraint_values:
-                if isinstance(item, dict) and 'interval' in item.keys():
-                    constraint['intervals'].append((item['interval']['start'],
-                                                    item['interval']['end']))
-                else:
-                    constraint['values'].append(item)
-        return constraint
 
     def _handle_get(self, asset_name: str,
                     material_id: list = Query([]),
@@ -152,11 +108,11 @@ class DataProviderService(FastIoTService):
             'value': value,
             'unit': unit
         }
-        custom_constraints = DataProviderService._calculate_constraints(custom_constraint_object)
-        custom_query = DataProviderService._build_query(custom_constraints)
+        custom_constraints = calculate_constraints(custom_constraint_object)
+        custom_query = build_query(custom_constraints)
         # create asset_query
         asset_constraints = self.assets[asset_name].get('constraints', {})
-        asset_query = self._build_query(asset_constraints)
+        asset_query = build_query(asset_constraints)
         # create data_query (query intersection)
         if custom_query or asset_query:
             data_query = {"$and": [custom_query, asset_query]}
@@ -164,7 +120,7 @@ class DataProviderService(FastIoTService):
             data_query = {}
         result = self.mongodb_col.find(data_query)  # create list of things
         things = list(map(from_mongo_data, result))
-        rows = DataProviderService._things_to_rows(things)
+        rows = things_to_rows(things)
         data_frame = pd.DataFrame.from_records(rows)
         # sort columns and log the table
         data_frame = data_frame[list(data_frame.columns.values)[:2] +
@@ -173,52 +129,6 @@ class DataProviderService(FastIoTService):
         return Response(content=data_frame.to_json(orient="records", date_format="iso", force_ascii=False),
                         media_type='application/json')
 
-    @staticmethod
-    def _build_query(constraints):
-        # TODO: fix types in queries (make compatible with database) + add url queries
-        query = {"$and": []}
-        conditions = []
-        for constraint_attr, constraint_content in constraints.items():
-            # prepare data
-            if not constraint_content:
-                continue
-            query_key = constraint_attr if constraint_attr != 'columns' else 'name'
-            # create query_value with query_key
-            query_value = {"$or": [
-                {query_key: {"$in": constraint_content['values']}}
-            ]}
-            for interval in constraint_content['intervals']:
-                query_value["$or"].append({query_key: {"$gte": interval[0], "$lte": interval[1]}})
-            # add query_key options to the query
-            conditions.append(query_value)
-        if conditions:
-            return {"$and": conditions}
-        return {}
-
-    @staticmethod
-    def _things_to_rows(things: List[Thing]):
-        # empty list (exception state)
-        if not things:
-            return []
-        # (timestamp, measurement_id) identifies row; make things order row by row
-        things.sort(key=lambda th: (th['timestamp'], th['measurement_id']))
-        rows = []
-        # possibly columns from different tables (otherwise only check index instead of key)
-        # init helper variables for the first list element
-        key_now = (things[0]['timestamp'], things[0]['measurement_id'])
-        row_now = {'Timestamp': things[0]['timestamp'],
-                   'Material_ID': things[0]['measurement_id']}
-        for ind, thing in enumerate(things):
-            thing_key = (thing['timestamp'], thing['measurement_id'])
-            if thing_key != key_now:  # this thing is from new row
-                rows.append(row_now)  # push previous row
-                row_now = {'Timestamp': thing['timestamp'],
-                           'Material_ID': thing['measurement_id']}  # init current row
-                key_now = thing_key  # set current key_now
-            row_now[thing['name']] = str(thing['value']) + ' ' + str(thing['unit'])  # create new table cell
-        rows.append(row_now)  # push the last row
-        return rows
-
     def _edc_put_assets(self):
         asset_api_instance = AssetApi(self.api_client)
 
@@ -226,7 +136,7 @@ class DataProviderService(FastIoTService):
             asset_id = hash(asset_name)
             asset_entry = AssetEntryDto(asset=AssetCreationRequestDto(
                 id=asset_id,
-                properties=DataProviderService._serialize_asset(asset_name, asset_body)),
+                properties=serialize_asset(asset_name, asset_body)),
                 data_address=DataAddress(
                     properties={"type": "LocalFile", "address": "/Files/test.txt"})
             )
@@ -236,21 +146,6 @@ class DataProviderService(FastIoTService):
             except ApiException:
                 response = asset_api_instance.create_asset(body=asset_entry)
             self._logger.debug(response)
-
-    @staticmethod
-    def _serialize_asset(asset_name, asset_body):
-        serialized_asset = dict()
-        DataProviderService._serialize_asset_rec(serialized_asset, asset_body, asset_name)
-        return serialized_asset
-
-    @staticmethod
-    def _serialize_asset_rec(serialized_asset, body, property_name):
-        if not isinstance(body, dict):
-            serialized_asset[property_name] = body
-        else:  # body structure is a dictionary
-            for key, item in body.items():
-                DataProviderService._serialize_asset_rec(serialized_asset, item, property_name + ':' + key)
-
 
 
 if __name__ == '__main__':
