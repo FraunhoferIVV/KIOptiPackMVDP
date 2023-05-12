@@ -1,5 +1,5 @@
 <template>
-    <div class="file-upload">
+    <div v-if="mode=='upload'" class="file-upload">
         <h2 class="file-upload__title">Upload XLSX- or CSV-File</h2>
         <div class="file-upload__wrapper">
             <div class="file-upload__item form-group">
@@ -55,6 +55,9 @@
                 
             </div>
             <div class="file-upload__item">
+                <button class="file-upload__submit-button btn btn-primary btn-lg" @click="editFile">Edit Table</button>
+            </div>
+            <div class="file-upload__item">
                 <button class="file-upload__submit-button btn btn-primary btn-lg" @click="submitFile">Upload</button>
             </div>
             <div class="file-upload__item">
@@ -62,6 +65,8 @@
             </div>
         </div>
     </div>
+
+    <EditTable v-if="mode=='edit'" :table="tableToEdit"/>
 </template>
 
 
@@ -70,23 +75,29 @@ import axios from 'axios';
 import {constants} from "@/constants";
 import { defineComponent } from 'vue';
 
+import EditTable from '@/components/EditTable.vue'
+
+import type MessageType from '@/types/MessageType'
+import type ModeType from '@/types/ModeType'
+import type TableType from '@/types/TableType'
+import type { Header, Item } from "vue3-easy-data-table";
+
+
 export default defineComponent({
+    components: {
+        EditTable
+    },
     mounted() {
         this.loadMaterialOptions()
     },
-    data() {
+    data() {           
         return {
+            mode: 'upload' as ModeType,
             dataFile: {} as File,
             fileType: '',
-            messageTypes: {
-                    info: 'info',
-                    error: 'error',
-                    warning: 'warning',
-                    success: 'success'
-                },
             uploadMessage: {
                 content: 'Upload file not chosen!',
-                type: 'info'
+                type: 'info' as MessageType
             },
             fileDelimiters: [{
                     name: 'Comma',
@@ -120,10 +131,31 @@ export default defineComponent({
         },
         uploadMessageClassObject() {
             return {
-                'file-upload__message--error': this.uploadMessage.type === this.messageTypes.error,
-                'file-upload__message--success': this.uploadMessage.type === this.messageTypes.success,
-                'file-upload__message--warning': this.uploadMessage.type === this.messageTypes.warning,
+                'file-upload__message--error': this.uploadMessage.type == 'error',
+                'file-upload__message--success': this.uploadMessage.type == 'success',
+                'file-upload__message--warning': this.uploadMessage.type == 'warning',
             }
+        },
+        tableToEdit() : TableType {
+            /*
+            make a get request on the server (parse dataFile);
+            server responses with a ready to edit table (change mode back and throw an error if the repsponse in an error)
+            prepare the table for the editing component
+            */
+            // create a dummy table
+            const headers : Header[] = [
+                { text: "Sensor1", value: 's1'},
+                { text: "Sensor2", value: 's2'}
+            ]
+            const items : Item[] = [
+                { s1: 1, s2: 2},
+                { s1: 3, s2: 4}
+            ]
+            const table = {
+                headers: headers,
+                items: items,
+            }
+            return table
         }
     },
     methods: {
@@ -132,14 +164,17 @@ export default defineComponent({
                 const target = event.target as HTMLInputElement;
                 this.dataFile = target.files![0]; // File Object
                 this.uploadMessage.content = '';
-                this.uploadMessage.type = this.messageTypes.info
+                this.uploadMessage.type = 'info'
             } catch (err) {
                 this.uploadMessage.content = 'File not accepted!';
-                this.uploadMessage.type = this.messageTypes.warning
+                this.uploadMessage.type = 'warning'
             }
         },
+        fileIsValid() {
+            return (this.checkExtension() && (this.fileType == '.xlsx' || this.checkConfiguration()))
+        },
         submitFile() { 
-            if (this.checkExtension() && (this.fileType == '.xlsx' || this.checkConfiguration())) {
+            if (this.fileIsValid()) {
                 // build post data
                 let formData = new FormData()
                 // add dataFile
@@ -163,45 +198,50 @@ export default defineComponent({
                     ).then((res) => {
                             console.log(res)
                             this.uploadMessage.content = 'File successfully uploaded'
-                            this.uploadMessage.type = this.messageTypes.success
+                            this.uploadMessage.type = 'success'
                         }, (error) => {
                             console.log(error)
-                            if (error.code === 'ERR_NETWORK') {
+                            if (error.code == 'ERR_NETWORK') {
                                 this.uploadMessage.content = 'Network error!\n\n' +
                                     'Possible reasons:\n' +
                                     '1. No server connection\n' +
                                     '2. file changed (refresh site)\n' +
                                     '3. xlsx-file not valid (create file from your office software)'                  
-                                this.uploadMessage.type = this.messageTypes.error;
+                                this.uploadMessage.type = 'error';
                             } else if ('response' in error) {
                                 this.uploadMessage.content = error.response.data.detail;
-                                this.uploadMessage.type = this.messageTypes.error;
+                                this.uploadMessage.type = 'error';
                             } else {
                                 this.uploadMessage.content = 'Unknown Error!'
-                                this.uploadMessage.type = this.messageTypes.error
+                                this.uploadMessage.type = 'error'
                             }
                         })
             }
 
         },
+        editFile() {
+            if (this.fileIsValid()) { 
+                this.mode = 'edit'
+            }
+        },  
         checkExtension() {
             try {
                 if (!this.dataFile || !this.dataFile.name) {
                     this.uploadMessage.content = 'No file!';
-                    this.uploadMessage.type = this.messageTypes.warning;
+                    this.uploadMessage.type = 'warning';
                     return false;
                 }
                 if (this.includesExtension('.xlsx') || this.includesExtension('.csv')) {
                     this.uploadMessage.content = 'Sending...';
-                    this.uploadMessage.type = this.messageTypes.info;
+                    this.uploadMessage.type = 'info';
                     return true;
                 }
                 this.uploadMessage.content = 'Wrong extension!';
-                this.uploadMessage.type = this.messageTypes.warning;
+                this.uploadMessage.type = 'warning';
                 return false;
             } catch (err) {
                 this.uploadMessage.content = 'Can not check extension'
-                this.uploadMessage.type = this.messageTypes.error
+                this.uploadMessage.type = 'error'
                 return false;
             }
         },
@@ -222,7 +262,7 @@ export default defineComponent({
         checkConfiguration() {
             if (this.fileConfiguration.decimalPick ==  this.fileConfiguration.delimiterPick) {
                 this.uploadMessage.content = 'Not acceptable delimiter configuration!';
-                this.uploadMessage.type = this.messageTypes.warning
+                this.uploadMessage.type = 'warning'
                 return false;
             }
             return true;
@@ -238,7 +278,7 @@ export default defineComponent({
                 }, (error) => {
                     console.log(error)
                     this.uploadMessage.content = 'Can not load Material_ID hints!'
-                    this.uploadMessage.type = this.messageTypes.warning
+                    this.uploadMessage.type = 'warning'
                 })
             
         }

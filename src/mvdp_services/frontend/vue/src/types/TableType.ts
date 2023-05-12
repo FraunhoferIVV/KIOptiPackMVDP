@@ -1,12 +1,7 @@
-export default interface HeaderType {
-    text: string
-    value: string
-}
-
-type Item = string | number
+import type { Header, Item } from "vue3-easy-data-table";
 
 export default interface TableType {
-    headers: HeaderType[],
-    items: Item[]   
+    headers: Header[],
+    items: Item[]
 }
 
