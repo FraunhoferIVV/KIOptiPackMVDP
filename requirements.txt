@@ -6,7 +6,7 @@
 #
 
 et-xmlfile==1.1.0         # via openpyxl
-fastiot==0.9.24           # via mvdp (pyproject.toml)
+fastiot==0.9.26           # via mvdp (pyproject.toml)
 msgpack==1.0.5            # via fastiot
 nats-py==2.2.0            # via fastiot
 numpy==1.24.3             # via pandas
