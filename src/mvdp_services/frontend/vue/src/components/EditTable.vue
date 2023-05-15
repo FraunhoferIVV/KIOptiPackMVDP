@@ -32,7 +32,7 @@ export default defineComponent({
 })
 
 /* 
-table example
+// table example
 const headers : Header[] = [
                 { text: "Sensor1", value: 's1'},
                 { text: "Sensor2", value: 's2'}
