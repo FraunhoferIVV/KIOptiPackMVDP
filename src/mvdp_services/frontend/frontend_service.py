@@ -1,7 +1,7 @@
 """
 Application logic for frontend service
 """
-
+import asyncio
 import io
 import logging
 import os
@@ -10,12 +10,14 @@ from typing import Optional
 import pandas as pd
 from fastapi import FastAPI, File, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastiot.core import FastIoTService
+from fastiot.core import FastIoTService, ReplySubject
 from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 
+from mvdp.msg import HealthCheckRequest, HealthCheckReply
 from mvdp.uvicorn_server import UvicornAsyncServer
+from mvdp_services.frontend.api_response_msg import HealthResponse
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.table_handler import TableHandler
 
@@ -41,6 +43,7 @@ class FrontendService(FastIoTService):
             allow_headers=["*"],
         )
 
+        self.app.get("/api/health_check")(self._health_check)
         self.app.get("/api/frontend_title")(self._send_title)
         self.app.post("/api/post_some_data")(self._handle_post)
 
@@ -62,6 +65,26 @@ class FrontendService(FastIoTService):
     async def _stop(self):
         """ Methods to call on module shutdown """
         await self.server.down()
+
+
+    async def _health_check(self) -> HealthResponse:
+        """ Performs a health check against message broker and edc, more maybe to follow."""
+
+        try:
+            edc_status = await self.broker_connection.request(subject=ReplySubject(name="data_provider",
+                                                                                   msg_cls=HealthCheckRequest,
+                                                                                   reply_cls=HealthCheckReply),
+                                                              msg=HealthCheckRequest(),
+                                                          timeout=3)
+            edc_health = True if edc_status.edc_health else False  # May provide None => Adjust to False
+        except asyncio.exceptions.TimeoutError:
+            edc_health = False
+
+        response = HealthResponse(broker=self.broker_connection.is_connected,
+                                  edc=edc_health,
+                                  overall_status=self.broker_connection.is_connected and edc_health)
+
+        return response
 
     @staticmethod
     async def _send_title():

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import UploadFileView from '../views/UploadFileView.vue'
 import EditDataView from '../views/EditDataView.vue'
+import StatusView from "@/views/StatusView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,6 +25,11 @@ const router = createRouter({
       path: '/edit_data',
       name: 'edit_data',
       component: EditDataView
+    },
+    {
+      path: '/system_status',
+      name: 'system_status',
+      component: StatusView
     }
   ]
 })

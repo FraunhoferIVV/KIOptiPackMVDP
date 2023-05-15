@@ -6,17 +6,19 @@ import time
 from copy import copy
 
 from fastapi import FastAPI, HTTPException, Query, Response
-from fastiot.core import FastIoTService
+from fastiot.core import FastIoTService, reply, ReplySubject
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
 from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
 from fastiot.util.read_yaml import read_config
 from starlette.middleware.cors import CORSMiddleware
 
+from mvdp.edc_management_client import ApplicationObservabilityApi
 from mvdp.edc_management_client.api import AssetApi
 from mvdp.edc_management_client.models import AssetCreationRequestDto, AssetEntryDto, DataAddress
 from mvdp.edc_management_client.rest import ApiException
 from mvdp.env import mvdp_env, MVDP_EDC_HOST
+from mvdp.msg import HealthCheckRequest, HealthCheckReply
 from mvdp.tools.dataprovider_functions import *
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.data_provider.edc_tools import init_edc, serialize_asset
@@ -98,6 +100,13 @@ class DataProviderService(FastIoTService):
             result[name].pop("constraints")
 
         return result
+
+    @reply(ReplySubject(name="data_provider", msg_cls=HealthCheckRequest, reply_cls=HealthCheckReply))
+    async def _health_check_response(self, msg: HealthCheckRequest) -> HealthCheckReply:
+        health_api_instance = ApplicationObservabilityApi(self.api_client)
+        health = health_api_instance.check_health()
+
+        return HealthCheckReply(edc_health=health[0].is_system_healthy)
 
     def _serve_asset(self, asset_name: str,
                      material_id: list = Query([]),

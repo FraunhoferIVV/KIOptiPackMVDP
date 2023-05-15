@@ -17,6 +17,7 @@ import "bootstrap"
       <li class="nav-item"><RouterLink class="nav-link" to="/">Start</RouterLink></li>
       <li class="nav-item"><RouterLink class="nav-link" to="/upload_file">Upload</RouterLink></li>
       <li class="nav-item"><RouterLink class="nav-link" to="/edit_data">Edit</RouterLink></li>
+      <li class="nav-item"><RouterLink class="nav-link" to="/system_status">System Status</RouterLink></li>
     </ul>
   </header>
 
@@ -54,7 +55,7 @@ export default defineComponent({
   },
   methods: {
     async set_title() {
-      await axios({
+      axios({
         method: 'get',
         url: constants.restBaseUrl + 'api/frontend_title',
         timeout: 2000
