@@ -236,7 +236,7 @@ export default defineComponent({
         },
         loadMaterialOptions() {
             
-            const getUrl = 'http://localhost:5478/api/get_some_data';
+            const getUrl = constants.restBaseUrl + 'api/get_some_data';
             // await not needed: client doesn't have to wait for server response with current options
             axios.get(getUrl).
                 then((res) => {

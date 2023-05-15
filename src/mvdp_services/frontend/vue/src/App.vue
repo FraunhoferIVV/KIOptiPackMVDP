@@ -9,7 +9,7 @@ import "bootstrap"
   <header>
     <div class="headline">
         <img src="./assets/kioptipack-logo.svg" alt=""  style="float: left;">
-        <h1>Minimum Viable Dataspace Participant</h1>
+        <h1>{{ title }}</h1>
         <img src="./assets/ivv-logo.png" alt="" style="float: right;">
     </div>
 
@@ -36,3 +36,37 @@ import "bootstrap"
  @import './assets/styles/style.scss';
  @import 'bootstrap/scss/bootstrap.scss';
 </style>
+
+<script lang="ts">
+import {constants} from "@/constants";
+import axios from "axios";
+import {defineComponent} from "vue";
+
+export default defineComponent({
+
+  mounted() {
+    this.set_title()
+  },
+  data() {
+    return {
+      title: 'Minimum Viable Dataspace Participant loading…'
+    }
+  },
+  methods: {
+    async set_title() {
+      await axios({
+        method: 'get',
+        url: constants.restBaseUrl + 'api/frontend_title',
+        timeout: 2000
+      }).then((res) => {
+        this.title = res.data.title
+        window.setTimeout(this.set_title, 5*60*1000)
+      }, (error) => {
+        console.log('Can not establish connection to server to update title')
+        console.log(error)
+        window.setTimeout(this.set_title, 10000)
+      })
+    }
+  }
+})
+</script>

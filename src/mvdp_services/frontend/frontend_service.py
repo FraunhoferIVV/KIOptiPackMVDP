@@ -41,6 +41,7 @@ class FrontendService(FastIoTService):
             allow_headers=["*"],
         )
 
+        self.app.get("/api/frontend_title")(self._send_title)
         self.app.post("/api/post_some_data")(self._handle_post)
 
         table_editor = TableHandler()
@@ -61,6 +62,11 @@ class FrontendService(FastIoTService):
     async def _stop(self):
         """ Methods to call on module shutdown """
         await self.server.down()
+
+    @staticmethod
+    async def _send_title():
+        """ Returns the title for the frontend configured via the env var ``MVDP_FRONTEND_TITLE`` on server side. """
+        return {'title': env_frontend.frontend_title}
 
     async def _handle_post(self, data_file: bytes = File(),
                            file_type: str = Form(...),
