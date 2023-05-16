@@ -2,6 +2,8 @@ import os
 
 MVDP_FRONTEND_PORT = 'MVDP_FRONTEND_PORT'
 MVDP_FRONTEND_TITLE = 'MVDP_FRONTEND_TITLE'
+MVDP_MONGODB_COLLECTION = 'MVDP_MONGODB_COLLECTION'
+
 
 class FrontendModuleEnv:
 
@@ -16,6 +18,10 @@ class FrontendModuleEnv:
     @property
     def frontend_title(self) -> str:
         return os.environ.get(MVDP_FRONTEND_TITLE, "Minimum Viable Dataspace Participant")
+
+    @property
+    def mongodb_collection(self) -> str:
+        return os.environ.get(MVDP_MONGODB_COLLECTION, "thing")
 
 
 env_frontend = FrontendModuleEnv()

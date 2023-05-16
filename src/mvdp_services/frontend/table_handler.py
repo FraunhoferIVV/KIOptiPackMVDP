@@ -1,10 +1,35 @@
+import pandas as pd
+from fastapi import Response
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
+from fastiot.env import env_mongodb
+from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
+
+from mvdp.tools.dataprovider_functions import things_to_rows
+from mvdp_services.frontend.api_response_msg import Table
+from mvdp_services.frontend.env import env_frontend
 
 
 class TableHandler:
     def __init__(self):
-        self._database = get_mongodb_client_from_env()
+        database = get_mongodb_client_from_env().get_database(env_mongodb.name)
+        self.mongodb_col = database.get_collection(env_frontend.mongodb_collection)
 
-    def edit_data(self):
-        pass
+    def return_table(self) -> Table:
+        """ Transfer the table
+        """
 
+        result = self.mongodb_col.find({})  # create list of things
+        things = list(map(from_mongo_data, result))
+        rows = things_to_rows(things)
+        data_frame = pd.DataFrame.from_records(rows)
+        # sort columns and log the table
+        data_frame = data_frame[list(data_frame.columns.values)[:2] +
+                                sorted(list(data_frame.columns.values)[2:])]
+
+        if len(data_frame.columns) > 0:
+            response = Table(headers=[{'text': str(c), 'value': str(c), 'sortable': True} for c in data_frame.columns],
+                             items=data_frame.to_dict(orient="records"))
+        else:
+            response = Table(headers=[{"text": "No Data", "value": "No Data"}], items=[{"No Data": "No Data"}])
+
+        return response

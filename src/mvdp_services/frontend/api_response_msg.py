@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -10,3 +12,9 @@ class HealthResponse(BaseModel):
 
     broker: bool = False
     """ Status of the connection to the message broker"""
+
+
+class Table(BaseModel):
+    """ Data for editable table """
+    headers: list[dict[str, str]]
+    items: list[dict[str, Any]]

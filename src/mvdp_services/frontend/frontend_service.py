@@ -48,7 +48,7 @@ class FrontendService(FastIoTService):
         self.app.post("/api/post_some_data")(self._handle_post)
 
         table_editor = TableHandler()
-        self.app.post("/api/table/edit")(table_editor.edit_data)
+        self.app.get("/api/table/data")(table_editor.return_table)
 
         try:
             self.app.mount("/",

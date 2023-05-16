@@ -1,52 +1,55 @@
 <script lang="ts">
-import { defineComponent } from 'vue';
+import {defineComponent} from 'vue';
 
-import type { Header, Item } from "vue3-easy-data-table";
+import type {Header, Item} from "vue3-easy-data-table";
 
 import EditTable from '@/components/EditTable.vue'
 import type TableType from '@/types/TableType';
 import type MessageType from '@/types/MessageType'
+import axios from "axios";
+import {constants} from "@/constants";
 
 
+export default defineComponent({
+  components: {
+    EditTable
+  },
+  mounted() {
+    this.fetchTable()
+  },
+  data() {
+    return {
+      editMessage: {
+        content: 'table loaded',
+        type: 'info' as MessageType
+      },
+        table: {headers: [], items: []}
+    }
+  },
 
-    export default defineComponent({
-        components: {
-            EditTable
-        },
-        data() {
-            return {
-                editMessage: {
-                    content: 'talbe loaded',
-                    type: 'info' as MessageType
-                }
-            }
-        },
-        methods: {
-            fetchTable() {
-                // fetch table from server
+  methods: {
+      fetchTable: async function () {
+          axios({
+              method: 'get',
+              url: constants.restBaseUrl + 'api/table/data',
+              timeout: 5000
+          }).then((res) => {
+              const headers: Header[] = res.data.headers
+              const items: Item[] = res.data.items
+              this.table = {headers: headers, items: items}
+              console.log(this.table);
 
-                // just an example
-                const headers : Header[] = [
-                    { text: "Sensor1", value: 's1'},
-                    { text: "Sensor2", value: 's2'}
-                ]
-                const items : Item[] = [
-                    { s1: 1, s2: 2},
-                    { s1: 3, s2: 4}
-                ]
-                const table = {
-                    headers: headers,
-                    items: items,
-                }
-                // example end
-                return table
-            }
-        }
-    })
+          }, (error) => {
+              console.log('Can not establish connection to server to update table')
+              console.log(error)
+          })
+      }
+  }
+})
 </script>
 
 <template>
-    <EditTable :table="fetchTable()"/>
+    <EditTable :table="table"/>
 </template>
 
 <style scoped>
