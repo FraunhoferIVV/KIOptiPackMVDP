@@ -23,7 +23,7 @@ export default defineComponent({
         content: 'table loaded',
         type: 'info' as MessageType
       },
-        table: {headers: [], items: []}
+        table: {headers: [] as Header[], items: [] as Item[]}
     }
   },
 
