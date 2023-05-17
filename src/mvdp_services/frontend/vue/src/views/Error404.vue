@@ -7,10 +7,10 @@
     <p>The path you were asking for could not be found.</p>
 </template>
 
-<script>
-export default {
-  name: "Error404.vue"
-}
+<script lang="ts">
+import {defineComponent} from "vue";
+
+export default defineComponent({})
 </script>
 
 <style scoped lang="scss">
