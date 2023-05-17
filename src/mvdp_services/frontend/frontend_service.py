@@ -14,6 +14,11 @@ from fastiot.core import FastIoTService, ReplySubject
 from fastiot.core.time import get_time_now
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request
+from fastapi.exceptions import HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.responses import JSONResponse
 
 from mvdp.msg import HealthCheckRequest, HealthCheckReply
 from mvdp.uvicorn_server import UvicornAsyncServer
@@ -55,6 +60,9 @@ class FrontendService(FastIoTService):
                            StaticFiles(directory=os.path.join(os.path.dirname(__file__), "vue", "dist"),
                                        html=True),
                            name="static")
+
+            self.app.exception_handler(404)(self.redirect_all_requests_to_frontend)
+
         except RuntimeError:
             pass
 
@@ -66,6 +74,13 @@ class FrontendService(FastIoTService):
         """ Methods to call on module shutdown """
         await self.server.down()
 
+    async def redirect_all_requests_to_frontend(self, _: Request, __: HTTPException):
+        vue_index_file = os.path.join(os.path.dirname(__file__), "vue", "dist", "index.html")
+        if os.path.isfile(vue_index_file):
+            return HTMLResponse(open(vue_index_file).read())
+        self._logger.warning("Vue.js application has not been build, can’t serve any page, not even error page!")
+        return JSONResponse(content={"Error": 404, "Description": "File not found. Vue.js application has not been "
+                                                                  "built to serve proper error page."})
 
     async def _health_check(self) -> HealthResponse:
         """ Performs a health check against message broker and edc, more maybe to follow."""
@@ -75,7 +90,7 @@ class FrontendService(FastIoTService):
                                                                                    msg_cls=HealthCheckRequest,
                                                                                    reply_cls=HealthCheckReply),
                                                               msg=HealthCheckRequest(),
-                                                          timeout=3)
+                                                              timeout=3)
             edc_health = True if edc_status.edc_health else False  # May provide None => Adjust to False
         except asyncio.exceptions.TimeoutError:
             edc_health = False

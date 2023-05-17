@@ -30,6 +30,10 @@ const router = createRouter({
       path: '/system_status',
       name: 'system_status',
       component: StatusView
+    },
+    {
+      path: '/:catchAll(.*)',
+      component: () => import('@/views/Error404.vue')
     }
   ]
 })
