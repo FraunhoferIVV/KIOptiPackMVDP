@@ -10,6 +10,7 @@ from fastiot.core import FastIoTService, reply, ReplySubject
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
 from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
+from fastiot.util.object_helper import parse_object_list
 from fastiot.util.read_yaml import read_config
 from starlette.middleware.cors import CORSMiddleware
 
@@ -143,7 +144,8 @@ class DataProviderService(FastIoTService):
         else:
             data_query = {}
         result = self.mongodb_col.find(data_query)  # create list of things
-        things = list(map(from_mongo_data, result))
+        result = list(map(from_mongo_data, result))
+        things= parse_object_list(result, Thing)  # TODO: Use things instead of dicts
         rows = things_to_rows(things)
         data_frame = pd.DataFrame.from_records(rows)
         # sort columns and log the table
