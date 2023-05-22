@@ -41,7 +41,12 @@ export default defineComponent({
 
         // reactive data
         const headers = props.table.headers as Header[]  
+        if (headers.length == 0 || headers[headers.length - 1].text != "Operation")
+                headers.push({text: "Operation", value: "operation"})
+
         const items = ref(props.table.items as Item[])
+        for (let i = 0; i < items.value.length; i++) {
+        }
 
         const itemsSelected = ref([] as Item[])
         const loading = ref(items.value.length == 0)
@@ -56,9 +61,10 @@ export default defineComponent({
         const deleteItem = (row : Item) => {
             isEditing.value = false;
             items.value = items.value.filter((item) => item.id !== row.id)
-            changedItems.push(row)
+            saveChange(row, "DELETE")
         }
 
+        // todo: find and edit directly the item in table
         const editItem = (row : Item) => {
             isEditing.value = true;
             const {Sensor1, Sensor2, id} = row
@@ -72,8 +78,43 @@ export default defineComponent({
             const item = items.value.find((item) => item.ide === editingItem.id) as Item;
             item.Sensor1 = editingItem.Sensor1
             item.Sensor2 = editingItem.Sensor2
-            changedItems.push(editingItem)
+            saveChange(editingItem, "EDIT")
         }
+        
+        // todo
+        const addItem = () => {
+
+        }
+
+        // todo
+        const submitAdding = () => {
+
+        }
+
+        const saveChange = (row : Item, changeType : String) => {
+            // remove overhead from row and add changeType
+            delete row.id
+            delete row.index
+            delete row.key
+            row.changeType = changeType
+            changedItems.push(row as Item)
+            console.log('changed[]: ', changedItems[0])
+        }
+        
+
+        // todo
+        const discardChanges = () => {
+            // request to load the original table again (almost the same as reload)
+
+        }
+
+        // todo
+        const confirmChanges = () => {
+            // emit changedItems
+            // changes overview ?
+
+        }
+
         
         console.log('EditTable component: Setup completed')
         console.log(props.table)
@@ -81,7 +122,7 @@ export default defineComponent({
         return {
             headers, items, loading,
             isEditing, editingItem,
-            // editItem, submitEdit, deleteItem,
+            editItem, submitEdit, deleteItem, saveChange,
             changedItems
         }
     }
