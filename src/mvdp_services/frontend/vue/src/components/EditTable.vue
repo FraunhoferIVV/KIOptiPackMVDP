@@ -19,37 +19,64 @@ export default defineComponent({
     components: {
         'EasyDataTable': Vue3EasyDataTable
     },
+    watch: {
+        table(newTable : TableType, oldTable : TableType) {
+            this.headers = newTable.headers as Header[]
+            if (this.headers.length == 0 || this.headers[this.headers.length - 1].text != "Operation")
+                this.headers.push({text: "Operation", value: "operation"})
+            //
+            this.items = newTable.items as Item[]
+            for (let i = 0; i < this.items.length; i++) {
+                this.items[i].id = i
+            }
+            //
+            this.loading = false
+            console.log(this.table)
+        }
+    },
     setup(props) {
         // datastructure for the future emit
         // save only edited or deleted Items (rows)
         let changedItems: Item[] = [] 
 
         // reactive data
-        const headers = ref(props.table.headers as Header[])
+        const headers = props.table.headers as Header[]  
+        const items = ref(props.table.items as Item[])
+
         const itemsSelected = ref([] as Item[])
-        const items = ref([] as Item[])
-        const loading = ref(true)
+        const loading = ref(items.value.length == 0)
         const isEditing = ref(false)
         const editingItem = reactive({
             Sensor1: "",
             Sensor2: "",
             id: 0
         })
-        // mini loading: useless feature
-        setTimeout(() => {
-            // making items reactive as soon as possible
-            items.value = props.table.items as Item[]
-            loading.value = false
-        }, 300)
         
         // methods
         const deleteItem = (row : Item) => {
+            isEditing.value = false;
             items.value = items.value.filter((item) => item.id !== row.id)
             changedItems.push(row)
         }
-        
+
+        const editItem = (row : Item) => {
+            isEditing.value = true;
+            const {Sensor1, Sensor2, id} = row
+            editingItem.Sensor1 = Sensor1
+            editingItem.Sensor2 = Sensor2
+            editingItem.id = id
+        }
+
+        const submitEdit = () => {
+            isEditing.value = false;
+            const item = items.value.find((item) => item.ide === editingItem.id) as Item;
+            item.Sensor1 = editingItem.Sensor1
+            item.Sensor2 = editingItem.Sensor2
+            changedItems.push(editingItem)
+        }
         
         console.log('EditTable component: Setup completed')
+        console.log(props.table)
         
         return {
             headers, items, loading,
@@ -70,7 +97,6 @@ export default defineComponent({
         :items="items"
         :loading="loading"
         show-index
-        fixed-index
         alternating
         border-cell
         buttons-pagination
@@ -78,36 +104,33 @@ export default defineComponent({
         <template #loading>
             <img src="@/assets/ivv-logo.png" alt="" style="float: right;">
         </template>
-        <!--
+        
         <template #item-operation="item">
             <div class="operation-wrapper">
                 <img
-                src="./images/delete.png"
+                src="@/assets/delete.png"
                 class="operation-icon"
                 @click="deleteItem(item)"
                 />
                 <img
-                src="./images/edit.png"
+                src="@/assets/edit.png"
                 class="operation-icon"
                 @click="editItem(item)"
                 />
             </div>
         </template>
-        -->
-        
+                
     </EasyDataTable>
 
-    <!--
-    <div class="edit-ite/edit_data
-        Sensor1:<input type="text" v-model="editingItem.height" />
+    
+    <div class="edit-item" v-if="isEditing">
+        Sensor1:<input type="text" v-model="editingItem.Sensor1" />
         <br />
-        Sensor2:<input type="text" v-model="editingItem.weight" />
+        Sensor2:<input type="text" v-model="editingItem.Sensor2" />
         <br />
         <button @click="submitEdit">ok</button>
-        
     </div>
-    -->
-</template>
+    </template>
 
 <style scoped>
 </style>
