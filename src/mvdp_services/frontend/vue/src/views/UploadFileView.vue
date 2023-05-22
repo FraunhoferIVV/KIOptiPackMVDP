@@ -163,7 +163,7 @@ export default defineComponent({
                     console.log(pair[0]+ ', ' + pair[1]); 
                 }
                 // post formData
-                const postUrl = constants.restBaseUrl + 'api/post_some_data';
+                const postUrl = constants.restBaseUrl + 'api/upload_data';
                 axios.post(postUrl, formData, {headers: {
                     "Content-Type": "multipart/form-data"
                     }}

@@ -3,6 +3,7 @@ Application logic for frontend service
 """
 import asyncio
 import io
+import json
 import logging
 import os
 from typing import Optional
@@ -20,7 +21,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import JSONResponse
 
-from mvdp.msg import HealthCheckRequest, HealthCheckReply
+from mvdp.msg import HealthCheckRequest, HealthCheckReply, ArbitraryJSONMessage
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.frontend.api_response_msg import HealthResponse
 from mvdp_services.frontend.env import env_frontend
@@ -50,7 +51,7 @@ class FrontendService(FastIoTService):
 
         self.app.get("/api/health_check")(self._health_check)
         self.app.get("/api/frontend_title")(self._send_title)
-        self.app.post("/api/post_some_data")(self._handle_post)
+        self.app.post("/api/upload_data")(self._handle_upload)
 
         table_editor = TableHandler()
         self.app.get("/api/table/data")(table_editor.return_table)
@@ -106,17 +107,52 @@ class FrontendService(FastIoTService):
         """ Returns the title for the frontend configured via the env var ``MVDP_FRONTEND_TITLE`` on server side. """
         return {'title': env_frontend.frontend_title}
 
-    async def _handle_post(self, data_file: bytes = File(),
-                           file_type: str = Form(...),
-                           data_delimiter: str = Form(...),
-                           decimal_delimiter: str = Form(...),
-                           material_id: Optional[str] = Form(None)):
+    async def _handle_upload(self, data_file: bytes = File(),
+                             file_type: str = Form(...),
+                             data_delimiter: str = Form(...),
+                             decimal_delimiter: str = Form(...),
+                             material_id: Optional[str] = Form(None)):
 
-        data_frame = self._parse_file(data_delimiter, data_file, decimal_delimiter, file_type)
-        timestamp_in_table = 'Timestamp' in data_frame
-        self._data_frame_validation(data_frame, material_id, timestamp_in_table)
-        await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
+        data_frame = await self._parse_file(data_delimiter, data_file, decimal_delimiter, file_type)
+        if data_frame:
+            timestamp_in_table = 'Timestamp' in data_frame
+            self._data_frame_validation(data_frame, material_id, timestamp_in_table)
+            await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
         return "File successfully uploaded"
+
+    async def _parse_file(self, data_delimiter, data_file, decimal_delimiter, file_type) -> Optional[pd.DataFrame]:
+        file_type = file_type.lower()
+        try:
+            if file_type == '.csv':
+                decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
+                data_delimiters = {'comma': ',', 'semicolon': ';'}
+                data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
+                                         delimiter=data_delimiters.get(data_delimiter, ","),
+                                         decimal=decimal_delimiter)
+            elif file_type == '.xlsx':
+                data_frame = pd.read_excel(data_file)
+            elif file_type == '.json':
+                await self._send_json_message(data_file)
+                data_frame = None
+            else:
+                raise HTTPException(status_code=500, detail=f'Unknown extension {file_type}.')
+        except:
+            raise HTTPException(status_code=500, detail='Could not parse the file!')
+        return data_frame
+
+    @staticmethod
+    def _data_frame_validation(data_frame, material_id, timestamp_in_table):
+        if len(data_frame.columns) <= 1:
+            raise HTTPException(status_code=500, detail='Potentially wrong configuration!')
+        material_id_exists = material_id or "Material_ID" in data_frame
+        if not material_id_exists or ("Material_ID" not in data_frame and "Timestamp" not in data_frame):
+            raise HTTPException(status_code=500, detail="No Material_ID or no Timestamp!")
+        if timestamp_in_table:
+            try:
+                data_frame.Timestamp = pd.to_datetime(data_frame.Timestamp)
+            except (pd.ParseError, ValueError):
+                raise HTTPException(status_code=500, detail="Could not parse datetimes")
+        return timestamp_in_table
 
     async def _data_frame_send_things(self, data_frame, material_id, timestamp_in_table):
         attributes = [column for column in data_frame
@@ -144,36 +180,11 @@ class FrontendService(FastIoTService):
                 await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"),
                                                      msg=thing)
 
-    @staticmethod
-    def _data_frame_validation(data_frame, material_id, timestamp_in_table):
-        if len(data_frame.columns) <= 1:
-            raise HTTPException(status_code=500, detail='Potentially wrong configuration!')
-        material_id_exists = material_id or "Material_ID" in data_frame
-        if not material_id_exists or ("Material_ID" not in data_frame and "Timestamp" not in data_frame):
-            raise HTTPException(status_code=500, detail="No Material_ID or no Timestamp!")
-        if timestamp_in_table:
-            try:
-                data_frame.Timestamp = pd.to_datetime(data_frame.Timestamp)
-            except (pd.ParseError, ValueError):
-                raise HTTPException(status_code=500, detail="Could not parse datetimes")
-        return timestamp_in_table
-
-    @staticmethod
-    def _parse_file(data_delimiter, data_file, decimal_delimiter, file_type):
-        decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
-        data_delimiters = {'comma': ',', 'semicolon': ';'}
-        try:
-            if file_type == '.csv':
-                data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
-                                         delimiter=data_delimiters.get(data_delimiter, ","),
-                                         decimal=decimal_delimiter)
-            elif file_type == '.xlsx':
-                data_frame = pd.read_excel(data_file)
-            else:
-                raise RuntimeError('Unknown extension')
-        except:
-            raise HTTPException(status_code=500, detail='Could not parse the file!')
-        return data_frame
+    async def _send_json_message(self, data_file):
+        json_content = json.loads(data_file)
+        message = ArbitraryJSONMessage(json_data=json_content)
+        await self.broker_connection.publish(subject=ArbitraryJSONMessage.get_subject(),
+                                             msg=message)
 
 
 if __name__ == '__main__':
