@@ -12,16 +12,3 @@ def init_edc():
 
     return ApiClient(config, header_name='X-Api-Key', header_value=mvdp_env.edc_api_key)
 
-
-def serialize_asset(asset_name, asset_body):
-    serialized_asset = dict()
-    serialize_asset_rec(serialized_asset, asset_body, asset_name)
-    return serialized_asset
-
-
-def serialize_asset_rec(serialized_asset, body, property_name):
-    if not isinstance(body, dict):
-        serialized_asset[property_name] = body
-    else:  # body structure is a dictionary
-        for key, item in body.items():
-            serialize_asset_rec(serialized_asset, item, property_name + ':' + key)

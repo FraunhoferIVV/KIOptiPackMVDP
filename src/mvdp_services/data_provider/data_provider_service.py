@@ -1,9 +1,9 @@
 """
 Application logic for data_provider service
 """
+import hashlib
 import logging
 import time
-from copy import copy
 
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastiot.core import FastIoTService, reply, ReplySubject
@@ -14,6 +14,7 @@ from fastiot.util.object_helper import parse_object_list
 from fastiot.util.read_yaml import read_config
 from starlette.middleware.cors import CORSMiddleware
 
+from mvdp.config_model import DataProviderConfiguration
 from mvdp.edc_management_client import ApplicationObservabilityApi
 from mvdp.edc_management_client.api import AssetApi
 from mvdp.edc_management_client.models import AssetCreationRequestDto, AssetEntryDto, DataAddress
@@ -22,7 +23,8 @@ from mvdp.env import mvdp_env, MVDP_EDC_HOST
 from mvdp.msg import HealthCheckRequest, HealthCheckReply
 from mvdp.tools.dataprovider_functions import *
 from mvdp.uvicorn_server import UvicornAsyncServer
-from mvdp_services.data_provider.edc_tools import init_edc, serialize_asset
+from mvdp_services.data_provider.api_response_msg import AssetList, AssetShortview
+from mvdp_services.data_provider.edc_tools import init_edc
 from mvdp_services.data_provider.env import env_data_provider
 
 
@@ -35,12 +37,12 @@ class DataProviderService(FastIoTService):
         database = mongo_db_client.get_database(env_mongodb.name)
         # potentially load asset from the database (db queries: Asset_x -> [column1, column2, ...])
         # read configuration
-        service_config = read_config(self)
+        service_config = DataProviderConfiguration.from_service(self)
         if not service_config:
             self._logger.error('Please set the config as shown in the documentation! Aborting service!')
             time.sleep(10)
             raise RuntimeError
-        self.mongodb_col = database.get_collection(service_config['collection'])
+        self.mongodb_col = database.get_collection(service_config.collection)
         self._parse_config(service_config)
 
         # init FastAPI and server
@@ -50,8 +52,12 @@ class DataProviderService(FastIoTService):
 
         # init edc
         if mvdp_env.edc_host:
-            self.api_client = init_edc()
-            self._edc_put_assets()
+            try:
+                self.api_client = init_edc()
+                self._edc_put_assets()
+            except ApiException:
+                self._logger.warn("Could not upload assets to EDC. Trying to continue.")
+                # TODO: Retry uploading, maybe we just had a temporary issue with the EDC.
         else:
             self._logger.info("No host for EDC configured with environment variable %s. Not uploading assets.",
                               MVDP_EDC_HOST)
@@ -77,33 +83,25 @@ class DataProviderService(FastIoTService):
         # no mounting apps
 
     def _parse_config(self, config):
-        self.assets = {}
-        if 'assets' not in config.keys():
-            return
-        for asset in config['assets']:
-            asset_name = list(asset.keys())[0]
-            asset_content = asset[asset_name]
-            self.assets[asset_name] = {}
-            for asset_attr, asset_attr_content in asset_content.items():
-                if asset_attr == 'constraints':
-                    self.assets[asset_name]['constraints'] = (
-                        calculate_constraints(asset_attr_content))
-                else:
-                    self.assets[asset_name][asset_attr] = asset_attr_content
+        self.assets = config.assets
+        for asset in self.assets.values():
+            asset.set_constraints(calculate_constraints(asset.constraints))
 
-    def _list_assets(self):
+    def _list_assets(self) -> AssetList:
         """ List all assets configured in the dataspace participant """
         result = {}
-        for name, config in self.assets.items():
-            result[name] = copy(config)
-            columns = config['constraints'].get('columns')
-            result[name]['columns'] = columns['values'] if columns else "all available columns"
-            result[name].pop("constraints")
+        for name, asset_config in self.assets.items():
+            columns = asset_config.constraints.get('columns') or ["all available columns"]
+            asset_short = AssetShortview(**dict(asset_config))
+            asset_short.constraints = {}
+            asset_short.set_constraints({})
+            asset_short.columns = columns
+            result[name] = asset_short
 
-        return result
+        return AssetList(assets=result)
 
     @reply(ReplySubject(name="data_provider", msg_cls=HealthCheckRequest, reply_cls=HealthCheckReply))
-    async def _health_check_response(self, msg: HealthCheckRequest) -> HealthCheckReply:
+    async def _health_check_response(self, _: HealthCheckRequest) -> HealthCheckReply:
         health_api_instance = ApplicationObservabilityApi(self.api_client)
         health = health_api_instance.check_health()
 
@@ -136,8 +134,7 @@ class DataProviderService(FastIoTService):
         custom_constraints = calculate_constraints(custom_constraint_object)
         custom_query = build_query(custom_constraints)
         # create asset_query
-        asset_constraints = self.assets[asset_name].get('constraints', {})
-        asset_query = build_query(asset_constraints)
+        asset_query = build_query(self.assets[asset_name].calculated_constraints_)
         # create data_query (query intersection)
         if custom_query or asset_query:
             data_query = {"$and": [custom_query, asset_query]}
@@ -153,16 +150,18 @@ class DataProviderService(FastIoTService):
                                 sorted(list(data_frame.columns.values)[2:])]
         self._logger.debug('\n' + str(data_frame))
         return Response(content=data_frame.to_json(orient="records", date_format="iso", force_ascii=False),
-                        media_type='application/json')
+                        media_type='application/json_data')
 
     def _edc_put_assets(self):
         asset_api_instance = AssetApi(self.api_client)
 
         for asset_name, asset_body in self.assets.items():
-            asset_id = hash(asset_name)
-            asset_entry = AssetEntryDto(asset=AssetCreationRequestDto(
-                id=asset_id,
-                properties=serialize_asset(asset_name, asset_body)),
+            asset_id = hashlib.md5(asset_name.encode('utf-8')).hexdigest()
+            asset_entry = AssetEntryDto(
+                asset=AssetCreationRequestDto(
+                    id=asset_id,
+                    properties={"asset:prop:name": "test", "asset:prop:version": "1.0",
+                                "asset:prop:id": "DatasetTest", "asset:prop:contenttype": "text/json"}),
                 data_address=DataAddress(
                     properties={"type": "LocalFile", "address": "/Files/test.txt"})
             )
