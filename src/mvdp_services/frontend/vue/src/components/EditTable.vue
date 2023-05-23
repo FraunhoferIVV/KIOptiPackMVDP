@@ -51,11 +51,7 @@ export default defineComponent({
         const itemsSelected = ref([] as Item[])
         const loading = ref(items.value.length == 0)
         const isEditing = ref(false)
-        const editingItem = reactive({
-            Sensor1: "",
-            Sensor2: "",
-            id: 0
-        })
+        const editingItem = reactive({} as Item) // use header values as properties
         
         // methods
         const deleteItem = (row : Item) => {
@@ -64,21 +60,22 @@ export default defineComponent({
             saveChange(row, "DELETE")
         }
 
-        // todo: find and edit directly the item in table
+        // todo: find a better interface for row editing
         const editItem = (row : Item) => {
             isEditing.value = true;
-            const {Sensor1, Sensor2, id} = row
-            editingItem.Sensor1 = Sensor1
-            editingItem.Sensor2 = Sensor2
-            editingItem.id = id
+            editingItem.s1 = row.s1
+            editingItem.s2 = row.s2
+            editingItem.id = row.id
         }
 
         const submitEdit = () => {
             isEditing.value = false;
-            const item = items.value.find((item) => item.ide === editingItem.id) as Item;
-            item.Sensor1 = editingItem.Sensor1
-            item.Sensor2 = editingItem.Sensor2
+            const item : Item = items.value.find((item) => item.id === editingItem.id) || editingItem // default value for typescript to calm down
+            console.log(item)
+            item.s1 = editingItem.s1
+            item.s2 = editingItem.s2
             saveChange(editingItem, "EDIT")
+            console.log(item)
         }
         
         // todo
@@ -98,7 +95,6 @@ export default defineComponent({
             delete row.key
             row.changeType = changeType
             changedItems.push(row as Item)
-            console.log('changed[]: ', changedItems[0])
         }
         
 
@@ -117,7 +113,6 @@ export default defineComponent({
 
         
         console.log('EditTable component: Setup completed')
-        console.log(props.table)
         
         return {
             headers, items, loading,
@@ -165,9 +160,9 @@ export default defineComponent({
 
     
     <div class="edit-item" v-if="isEditing">
-        Sensor1:<input type="text" v-model="editingItem.Sensor1" />
+        Sensor1:<input type="text" v-model="editingItem.s1" />
         <br />
-        Sensor2:<input type="text" v-model="editingItem.Sensor2" />
+        Sensor2:<input type="text" v-model="editingItem.s2" />
         <br />
         <button @click="submitEdit">ok</button>
     </div>

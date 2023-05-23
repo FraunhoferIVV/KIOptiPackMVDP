@@ -57,8 +57,6 @@ export default defineComponent({
                       { s1: 3, s2: 4}
                   ]
             this.table = {headers: headers, items: items}
-            console.log('Test table: ')
-            console.log(this.table)
          
       }
   }
