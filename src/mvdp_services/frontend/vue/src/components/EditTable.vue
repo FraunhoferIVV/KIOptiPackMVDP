@@ -22,8 +22,10 @@ export default defineComponent({
     methods: {
         loadTable(table : TableType) {
             this.loading = true
+            this.changedItems = []
             //
             this.headers = table.headers as Header[]
+            this.editableHeaders = table.headers.map(header => Object.assign({}, header)) // copy original table headers
             if (this.headers.length == 0 || this.headers[this.headers.length - 1].text != "Operation")
                 this.headers.push({text: "Operation", value: "operation"})
             //
@@ -54,7 +56,8 @@ export default defineComponent({
         const headers = ref([] as Header[])
         const items = ref([] as Item[])
         
-        const itemsSelected = ref([] as Item[])
+        const editableHeaders = ref([] as Header[])
+        // const itemsSelected = ref([] as Item[])
         const loading = ref(items.value.length == 0)
         const isEditing = ref(false)
         const editingItem = reactive({} as Item) // use header values as properties
@@ -69,16 +72,13 @@ export default defineComponent({
         // todo: find a better interface for row editing
         const editItem = (row : Item) => {
             isEditing.value = true;
-            editingItem.s1 = row.s1
-            editingItem.s2 = row.s2
-            editingItem.id = row.id
+            Object.assign(editingItem, row)
         }
 
         const submitEdit = () => {
             isEditing.value = false;
             const item : Item = items.value.find((item) => item.id === editingItem.id) || editingItem // default value for typescript to calm down
-            item.s1 = editingItem.s1
-            item.s2 = editingItem.s2
+            Object.assign(item, editingItem)
             saveChange(editingItem, "EDIT")
         }
         
@@ -109,9 +109,14 @@ export default defineComponent({
 
         }
 
+        // todo: sum up all the changes with the same id
+        const manageChanges = () => {
+
+        }
+
         // todo
         const confirmChanges = () => {
-            // sum up the changes with the same id
+            manageChanges()
             // emit changedItems
             // changes overview ?
 
@@ -122,7 +127,7 @@ export default defineComponent({
         
         return {
             headers, items, 
-            currentId,
+            editableHeaders, currentId,
             loading, 
             isEditing, editingItem,
             editItem, submitEdit, deleteItem, saveChange,
@@ -166,15 +171,15 @@ export default defineComponent({
                 
     </EasyDataTable>
 
-    
     <div class="edit-item" v-if="isEditing">
-        Sensor1:<input type="text" v-model="editingItem.s1" />
-        <br />
-        Sensor2:<input type="text" v-model="editingItem.s2" />
-        <br />
+        <div v-for="(header, index) in editableHeaders" :key="index">
+            <p> {{ header.text }} <input type="text" v-model="editingItem[header.value]" /> </p>
+        </div>
         <button @click="submitEdit">ok</button>
     </div>
-    </template>
+
+
+</template>
 
 <style scoped>
 </style>
