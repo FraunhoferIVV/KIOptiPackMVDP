@@ -19,35 +19,41 @@ export default defineComponent({
     components: {
         'EasyDataTable': Vue3EasyDataTable
     },
-    watch: {
-        table(newTable : TableType, oldTable : TableType) {
-            this.headers = newTable.headers as Header[]
+    methods: {
+        loadTable(table : TableType) {
+            this.loading = true
+            //
+            this.headers = table.headers as Header[]
             if (this.headers.length == 0 || this.headers[this.headers.length - 1].text != "Operation")
                 this.headers.push({text: "Operation", value: "operation"})
             //
-            this.items = newTable.items as Item[]
+            this.items = table.items as Item[]
+            this.currentId = 0
             for (let i = 0; i < this.items.length; i++) {
-                this.items[i].id = i
+                this.items[i].id = this.currentId++
             }
             //
             this.loading = false
-            console.log(this.table)
+        }
+    },
+    mounted() { 
+        this.loadTable(this.table)
+    },
+    watch: {
+        table(newTable : TableType, oldTable : TableType) {
+            this.loadTable(newTable)
         }
     },
     setup(props) {
         // datastructure for the future emit
-        // save only edited or deleted Items (rows)
+        // save only added/edited/deleted Items (rows)
         let changedItems: Item[] = [] 
 
         // reactive data
-        const headers = props.table.headers as Header[]  
-        if (headers.length == 0 || headers[headers.length - 1].text != "Operation")
-                headers.push({text: "Operation", value: "operation"})
-
-        const items = ref(props.table.items as Item[])
-        for (let i = 0; i < items.value.length; i++) {
-        }
-
+        let currentId = 0
+        const headers = ref([] as Header[])
+        const items = ref([] as Item[])
+        
         const itemsSelected = ref([] as Item[])
         const loading = ref(items.value.length == 0)
         const isEditing = ref(false)
@@ -71,11 +77,9 @@ export default defineComponent({
         const submitEdit = () => {
             isEditing.value = false;
             const item : Item = items.value.find((item) => item.id === editingItem.id) || editingItem // default value for typescript to calm down
-            console.log(item)
             item.s1 = editingItem.s1
             item.s2 = editingItem.s2
             saveChange(editingItem, "EDIT")
-            console.log(item)
         }
         
         // todo
@@ -95,6 +99,7 @@ export default defineComponent({
             delete row.key
             row.changeType = changeType
             changedItems.push(row as Item)
+            console.log(changedItems)
         }
         
 
@@ -106,6 +111,7 @@ export default defineComponent({
 
         // todo
         const confirmChanges = () => {
+            // sum up the changes with the same id
             // emit changedItems
             // changes overview ?
 
@@ -115,7 +121,9 @@ export default defineComponent({
         console.log('EditTable component: Setup completed')
         
         return {
-            headers, items, loading,
+            headers, items, 
+            currentId,
+            loading, 
             isEditing, editingItem,
             editItem, submitEdit, deleteItem, saveChange,
             changedItems
