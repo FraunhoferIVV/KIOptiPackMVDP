@@ -63,20 +63,20 @@ def things_to_rows(things: List[Thing]):
     if not things:
         return []
     # (timestamp, measurement_id) identifies row; make things order row by row
-    things.sort(key=lambda th: (th['timestamp'], th['measurement_id']))
+    things.sort(key=lambda th: (th.timestamp, th.measurement_id))
     rows = []
     # possibly columns from different tables (otherwise only check index instead of key)
     # init helper variables for the first list element
-    key_now = (things[0]['timestamp'], things[0]['measurement_id'])
-    row_now = {'Timestamp': things[0]['timestamp'],
-               'Material_ID': things[0]['measurement_id']}
+    key_now = (things[0].timestamp, things[0].measurement_id)
+    row_now = {'Timestamp': things[0].timestamp,
+               'Material_ID': things[0].measurement_id}
     for ind, thing in enumerate(things):
-        thing_key = (thing['timestamp'], thing['measurement_id'])
+        thing_key = (thing.timestamp, thing.measurement_id)
         if thing_key != key_now:  # this thing is from new row
             rows.append(row_now)  # push previous row
-            row_now = {'Timestamp': thing['timestamp'],
-                       'Material_ID': thing['measurement_id']}  # init current row
+            row_now = {'Timestamp': thing.timestamp,
+                       'Material_ID': thing.measurement_id}  # init current row
             key_now = thing_key  # set current key_now
-        row_now[thing['name']] = str(thing['value']) + ' ' + str(thing['unit'])  # create new table cell
+        row_now[thing.name] = str(thing.value) + ' ' + str(thing.unit)  # create new table cell
     rows.append(row_now)  # push the last row
     return rows

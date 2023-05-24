@@ -23,7 +23,7 @@ from starlette.responses import JSONResponse
 
 from mvdp.msg import HealthCheckRequest, HealthCheckReply, ArbitraryJSONMessage
 from mvdp.uvicorn_server import UvicornAsyncServer
-from mvdp_services.frontend.api_response_msg import HealthResponse
+from mvdp_services.frontend.api_response_msg import HealthResponse, PossibleFileTypes, PossibleCSVDelimiters
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.table_handler import TableHandler
 
@@ -56,14 +56,13 @@ class FrontendService(FastIoTService):
         table_editor = TableHandler()
         self.app.get("/api/table/data")(table_editor.return_table)
 
+        self.app.exception_handler(404)(self.redirect_all_requests_to_frontend)
+
         try:
             self.app.mount("/",
                            StaticFiles(directory=os.path.join(os.path.dirname(__file__), "vue", "dist"),
                                        html=True),
                            name="static")
-
-            self.app.exception_handler(404)(self.redirect_all_requests_to_frontend)
-
         except RuntimeError:
             pass
 
@@ -108,30 +107,34 @@ class FrontendService(FastIoTService):
         return {'title': env_frontend.frontend_title}
 
     async def _handle_upload(self, data_file: bytes = File(),
-                             file_type: str = Form(...),
-                             data_delimiter: str = Form(...),
-                             decimal_delimiter: str = Form(...),
+                             file_type: PossibleFileTypes = Form(...),
+                             data_delimiter: Optional[PossibleCSVDelimiters] = Form(None),
+                             decimal_delimiter: Optional[PossibleCSVDelimiters] = Form(None),
                              material_id: Optional[str] = Form(None)):
-
-        data_frame = await self._parse_file(data_delimiter, data_file, decimal_delimiter, file_type)
-        if data_frame:
+        """
+        Endpoint to upload files formed as table (Excel .xlsx-files or comma separated values .csv) or plain JSON.
+        If CSV is used decimal and data delimiter must be set.
+        """
+        data_frame = await self._parse_file(data_file=data_file, file_type=file_type,
+                                            data_delimiter=data_delimiter, decimal_delimiter=decimal_delimiter, )
+        if data_frame is not None:
             timestamp_in_table = 'Timestamp' in data_frame
             self._data_frame_validation(data_frame, material_id, timestamp_in_table)
             await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
         return "File successfully uploaded"
 
-    async def _parse_file(self, data_delimiter, data_file, decimal_delimiter, file_type) -> Optional[pd.DataFrame]:
+    async def _parse_file(self, data_file, data_delimiter: PossibleCSVDelimiters,
+                          decimal_delimiter: PossibleCSVDelimiters, file_type) -> Optional[pd.DataFrame]:
         file_type = file_type.lower()
+        file_type = file_type if not file_type.startswith('.') else file_type[1:]
         try:
-            if file_type == '.csv':
-                decimal_delimiter = ',' if decimal_delimiter == 'comma' else '.'
-                data_delimiters = {'comma': ',', 'semicolon': ';'}
+            if file_type == 'csv':
                 data_frame = pd.read_csv(io.StringIO(data_file.decode('utf-8')),
-                                         delimiter=data_delimiters.get(data_delimiter, ","),
-                                         decimal=decimal_delimiter)
-            elif file_type == '.xlsx':
+                                         delimiter=data_delimiter.to_raw(),
+                                         decimal=decimal_delimiter.to_raw())
+            elif file_type == 'xlsx':
                 data_frame = pd.read_excel(data_file)
-            elif file_type == '.json':
+            elif file_type == 'json':
                 await self._send_json_message(data_file)
                 data_frame = None
             else:

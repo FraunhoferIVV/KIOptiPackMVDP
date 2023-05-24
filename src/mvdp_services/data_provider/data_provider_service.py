@@ -4,8 +4,10 @@ Application logic for data_provider service
 import hashlib
 import logging
 import time
+from typing import Type
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import Response, JSONResponse
 from fastiot.core import FastIoTService, reply, ReplySubject
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
@@ -14,7 +16,7 @@ from fastiot.util.object_helper import parse_object_list
 from fastiot.util.read_yaml import read_config
 from starlette.middleware.cors import CORSMiddleware
 
-from mvdp.config_model import DataProviderConfiguration
+from mvdp.config_model import DataProviderConfiguration, AssetServingTypeEnum
 from mvdp.edc_management_client import ApplicationObservabilityApi
 from mvdp.edc_management_client.api import AssetApi
 from mvdp.edc_management_client.models import AssetCreationRequestDto, AssetEntryDto, DataAddress
@@ -34,7 +36,7 @@ class DataProviderService(FastIoTService):
         super().__init__(**kwargs)
         # init database
         mongo_db_client = get_mongodb_client_from_env()
-        database = mongo_db_client.get_database(env_mongodb.name)
+        self.database = mongo_db_client.get_database(env_mongodb.name)
         # potentially load asset from the database (db queries: Asset_x -> [column1, column2, ...])
         # read configuration
         service_config = DataProviderConfiguration.from_service(self)
@@ -42,7 +44,6 @@ class DataProviderService(FastIoTService):
             self._logger.error('Please set the config as shown in the documentation! Aborting service!')
             time.sleep(10)
             raise RuntimeError
-        self.mongodb_col = database.get_collection(service_config.collection)
         self._parse_config(service_config)
 
         # init FastAPI and server
@@ -113,13 +114,27 @@ class DataProviderService(FastIoTService):
                      columns: list = Query([]),
                      value: list = Query([]),
                      unit: list = Query([]),
-                     machine: list = Query([])):
+                     machine: list = Query([])) -> Type[Response]:
         """ Receive a single, specified asset.
 
         Optionally set some limits to filter the provided data.
         """
         if asset_name not in self.assets:
             raise HTTPException(status_code=404, detail='Asset not configured!')
+
+        if self.assets[asset_name].asset_serving_type == AssetServingTypeEnum.thing:
+            return self._build_thing_asset(asset_name, material_id, timestamp, columns, value, unit, machine)
+        elif self.assets[asset_name].asset_serving_type == AssetServingTypeEnum.json:
+            return self._build_json_asset(asset_name)
+        else:
+            raise HTTPException(status_code=500, detail="Error in asset configuration.")
+
+    def _build_thing_asset(self, asset_name, material_id: list = Query([]),
+                     timestamp: list = Query([]),
+                     columns: list = Query([]),
+                     value: list = Query([]),
+                     unit: list = Query([]),
+                     machine: list = Query([])) -> Response:
         # TODO: enable one bounded range constraints + certain time ago
         # TODO: enable url interval queries
         # create custom_query
@@ -140,7 +155,8 @@ class DataProviderService(FastIoTService):
             data_query = {"$and": [custom_query, asset_query]}
         else:
             data_query = {}
-        result = self.mongodb_col.find(data_query)  # create list of things
+        collection = self.database.get_collection(self.assets[asset_name].asset_collection)
+        result = collection.find(data_query)  # create list of things
         result = list(map(from_mongo_data, result))
         things= parse_object_list(result, Thing)  # TODO: Use things instead of dicts
         rows = things_to_rows(things)
@@ -150,7 +166,13 @@ class DataProviderService(FastIoTService):
                                 sorted(list(data_frame.columns.values)[2:])]
         self._logger.debug('\n' + str(data_frame))
         return Response(content=data_frame.to_json(orient="records", date_format="iso", force_ascii=False),
-                        media_type='application/json_data')
+                        media_type='application/json')
+
+    def _build_json_asset(self, asset_name: str) -> JSONResponse:
+        collection = self.database.get_collection(self.assets[asset_name].asset_collection)
+        result = collection.find({})
+        return JSONResponse(content=[r.get('json_data') for r in result])
+
 
     def _edc_put_assets(self):
         asset_api_instance = AssetApi(self.api_client)
@@ -161,7 +183,7 @@ class DataProviderService(FastIoTService):
                 asset=AssetCreationRequestDto(
                     id=asset_id,
                     properties={"asset:prop:name": "test", "asset:prop:version": "1.0",
-                                "asset:prop:id": "DatasetTest", "asset:prop:contenttype": "text/json"}),
+                                "asset:prop:id": "DatasetTest", "asset:prop:contenttype": "text/plain"}),
                 data_address=DataAddress(
                     properties={"type": "LocalFile", "address": "/Files/test.txt"})
             )

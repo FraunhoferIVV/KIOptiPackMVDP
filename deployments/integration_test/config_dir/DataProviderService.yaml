@@ -3,6 +3,9 @@ search_index:
   - name
 collection: 'thing'
 assets:
+  Asset_full:
+    description: "All available Thing Data"
+
   Asset_1:
     description: "Asset Sensor_B"
     policy: default
@@ -15,6 +18,7 @@ assets:
             start: 09/19/22 13:55:10
             end: 09/19/22 13:55:30
         - 09/19/22 13:55:02
+
   Asset_2:
     description: "Asset sensors A and C"
     policy: default
@@ -23,14 +27,19 @@ assets:
         - "Sensor_A"
         - "Sensor_C"
       measurement_id:
-        - "1"
-        - "2"
-        - "3"
-        - "4"
+        - "K1"
+        - "K2"
+        - "K3"
+        - "K4"
       value:
         - interval:
-            start: 12
-            end: 32
+            start: 0
+            end: 100
+
+  Asset_json:
+    description: "Asset for raw json files"
+    asset_serving_type: json
+    asset_collection: json
 
 # each constraint attribute is a list of possible values and intervals (start, end) (default order)
 # for all possible values don't specify the constraint (or set another False value)

@@ -1,6 +1,27 @@
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel
+
+
+class PossibleFileTypes(str, Enum):
+    csv = 'csv'
+    json = 'json'
+    xlsx = 'xlsx'
+
+
+class PossibleCSVDelimiters(str, Enum):
+    comma = 'comma'
+    point = 'point'
+    semicolon = 'semicolon'
+    tabulator = 'tabulator'
+
+    def to_raw(self) -> str:
+        """
+        Returns the raw value instead of the name, so ``dot`` becomes ``.``.
+        """
+        raw_dict = {self.comma: ',', self.point: '.', self.semicolon: ';', self.tabulator: '\t'}
+        return raw_dict.get(self)
 
 
 class HealthResponse(BaseModel):

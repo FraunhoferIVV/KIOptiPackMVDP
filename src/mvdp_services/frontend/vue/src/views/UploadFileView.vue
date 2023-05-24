@@ -87,7 +87,6 @@ export default defineComponent({
     data() {           
         return {
             dataFile: {} as File,
-            fileType: '',
             uploadMessage: {
                 content: 'Upload file not chosen!',
                 type: 'info' as MessageType
@@ -143,7 +142,7 @@ export default defineComponent({
             }
         },
         fileIsValid() {
-            return (this.checkExtension() && (this.fileType == '.xlsx' || this.checkConfiguration()))
+            return (this.checkExtension() && this.checkConfiguration())
         },
         submitFile() { 
             if (this.fileIsValid()) {
@@ -151,7 +150,7 @@ export default defineComponent({
                 let formData = new FormData()
                 // add dataFile
                 formData.append('data_file', this.dataFile) 
-                formData.append('file_type', this.fileType)
+                formData.append('file_type', this.getExtension())
                 // add dataFile configuration
                 formData.append('data_delimiter', this.fileConfiguration.delimiterPick)
                 formData.append('decimal_delimiter', this.fileConfiguration.decimalPick)
@@ -190,15 +189,19 @@ export default defineComponent({
                         })
             }
 
-        },  
+        },
+        getExtension() {
+          return this.dataFile.name.split('.').at(-1).toLowerCase();
+        },
         checkExtension() {
+          let allowed_extensions = ['csv', 'xlsx', 'json']
             try {
                 if (!this.dataFile || !this.dataFile.name) {
                     this.uploadMessage.content = 'No file!';
                     this.uploadMessage.type = 'warning';
                     return false;
                 }
-                if (this.includesExtension('.xlsx') || this.includesExtension('.csv')) {
+                if (allowed_extensions.indexOf(this.getExtension()) > -1) {
                     this.uploadMessage.content = 'Sending...';
                     this.uploadMessage.type = 'info';
                     return true;
@@ -212,23 +215,10 @@ export default defineComponent({
                 return false;
             }
         },
-        includesExtension(ext: String) {
-            let name = this.dataFile.name
-            let n = name.length
-            let m = ext.length
-            if (n < m) {
-                return false;
-            }
-            let ending = name.substring(n - m, n)
-            if (ending.valueOf() == ext.valueOf()) {
-                this.fileType = ext.valueOf()
-                return true
-            }
-            return false
-        },
         checkConfiguration() {
-            if (this.fileConfiguration.decimalPick ==  this.fileConfiguration.delimiterPick) {
-                this.uploadMessage.content = 'Not acceptable delimiter configuration!';
+            if (this.getExtension() == 'csv' &&
+                  this.fileConfiguration.decimalPick ==  this.fileConfiguration.delimiterPick) {
+                this.uploadMessage.content = 'Delimiter configuration contains errors. Did you select the same type twice?!';
                 this.uploadMessage.type = 'warning'
                 return false;
             }
