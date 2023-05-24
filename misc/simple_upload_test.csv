@@ -1,3 +1,4 @@
-Material_ID;Name;Wert1
-K1;Material 1;1.0
-K2;Material 2;2.0
+Material_ID;Sensor_A;Sensor_B;Sensor_C
+K1;42;1.0;24
+K2;43;2.0;25
+K3;44;3.09;356
