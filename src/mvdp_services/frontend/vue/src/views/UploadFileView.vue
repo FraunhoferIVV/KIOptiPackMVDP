@@ -191,7 +191,8 @@ export default defineComponent({
 
         },
         getExtension() {
-          return this.dataFile.name.split('.').at(-1).toLowerCase();
+          let parts = this.dataFile.name.split('.')
+          return parts[parts.length - 1].toLowerCase();
         },
         checkExtension() {
           let allowed_extensions = ['csv', 'xlsx', 'json']
