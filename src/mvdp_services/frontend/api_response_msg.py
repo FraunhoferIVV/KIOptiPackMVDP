@@ -39,3 +39,9 @@ class Table(BaseModel):
     """ Data for editable table """
     headers: list[dict[str, str]]
     items: list[dict[str, Any]]
+
+
+class FrontendConfiguration(BaseModel):
+    """ Some configuration options to be transferred to the frontend """
+    title: str
+    """ A frontend title configured via the env var ``MVDP_FRONTEND_TITLE`` on server side."""

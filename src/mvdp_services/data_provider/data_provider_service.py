@@ -40,10 +40,6 @@ class DataProviderService(FastIoTService):
         # potentially load asset from the database (db queries: Asset_x -> [column1, column2, ...])
         # read configuration
         service_config = DataProviderConfiguration.from_service(self)
-        if not service_config:
-            self._logger.error('Please set the config as shown in the documentation! Aborting service!')
-            time.sleep(10)
-            raise RuntimeError
         self._parse_config(service_config)
 
         # init FastAPI and server
@@ -53,12 +49,7 @@ class DataProviderService(FastIoTService):
 
         # init edc
         if mvdp_env.edc_host:
-            try:
-                self.api_client = init_edc()
-                self._edc_put_assets()
-            except ApiException:
-                self._logger.warn("Could not upload assets to EDC. Trying to continue.")
-                # TODO: Retry uploading, maybe we just had a temporary issue with the EDC.
+            self._init_edc()
         else:
             self._logger.info("No host for EDC configured with environment variable %s. Not uploading assets.",
                               MVDP_EDC_HOST)
@@ -82,6 +73,15 @@ class DataProviderService(FastIoTService):
         self.app.get("/assets")(self._list_assets)
         self.app.get("/assets/{asset_name}")(self._serve_asset)
         # no mounting apps
+
+    def _init_edc(self):
+        try:
+            self.api_client = init_edc()
+            self._edc_put_assets()
+        except ApiException:
+            self._logger.warn("Could not upload assets to EDC. Trying to continue.")
+            # TODO: Retry uploading, maybe we just had a temporary issue with the EDC.
+
 
     def _parse_config(self, config):
         self.assets = config.assets
@@ -126,8 +126,8 @@ class DataProviderService(FastIoTService):
             return self._build_thing_asset(asset_name, material_id, timestamp, columns, value, unit, machine)
         elif self.assets[asset_name].asset_serving_type == AssetServingTypeEnum.json:
             return self._build_json_asset(asset_name)
-        else:
-            raise HTTPException(status_code=500, detail="Error in asset configuration.")
+
+        raise HTTPException(status_code=500, detail="Error in asset configuration.")
 
     def _build_thing_asset(self, asset_name, material_id: list = Query([]),
                      timestamp: list = Query([]),
@@ -158,13 +158,13 @@ class DataProviderService(FastIoTService):
         collection = self.database.get_collection(self.assets[asset_name].asset_collection)
         result = collection.find(data_query)  # create list of things
         result = list(map(from_mongo_data, result))
-        things= parse_object_list(result, Thing)  # TODO: Use things instead of dicts
+
+        things = parse_object_list(result, Thing)
         rows = things_to_rows(things)
         data_frame = pd.DataFrame.from_records(rows)
         # sort columns and log the table
-        data_frame = data_frame[list(data_frame.columns.values)[:2] +
-                                sorted(list(data_frame.columns.values)[2:])]
-        self._logger.debug('\n' + str(data_frame))
+        data_frame = data_frame[list(data_frame.columns.values)[:2] + sorted(list(data_frame.columns.values)[2:])]
+
         return Response(content=data_frame.to_json(orient="records", date_format="iso", force_ascii=False),
                         media_type='application/json')
 

@@ -58,7 +58,7 @@ def build_query(constraints):
     return {}
 
 
-def things_to_rows(things: List[Thing]):
+def things_to_rows(things: List[Thing]) -> List[dict]:
     # empty list (exception state)
     if not things:
         return []

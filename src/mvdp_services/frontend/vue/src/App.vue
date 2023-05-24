@@ -57,7 +57,7 @@ export default defineComponent({
     async set_title() {
       axios({
         method: 'get',
-        url: constants.restBaseUrl + 'api/frontend_title',
+        url: constants.restBaseUrl + 'api/frontend_config',
         timeout: 2000
       }).then((res) => {
         this.title = res.data.title
