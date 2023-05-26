@@ -19,34 +19,13 @@ export default defineComponent({
     components: {
         'EasyDataTable': Vue3EasyDataTable
     },
-    methods: {
-        loadTable(table : TableType) {
-            this.loading = true
-            this.changedItems = []
-            //
-            this.headers = table.headers as Header[]
-            this.editableHeaders = table.headers.map(header => Object.assign({}, header)) // copy original table headers
-            console.log(this.headers)
-            console.log(this.editableHeaders)
-            if (this.headers.length == 0 || this.headers[this.headers.length - 1].text != "Operation")
-                this.headers.push({text: "Operation", value: "operation"})
-            //
-            this.items = table.items as Item[]
-            this.currentId = 0
-            console.log('Index drop down!')
-            for (let i = 0; i < this.items.length; i++) {
-                this.items[i].id = this.currentId++
-            }
-            //
-            this.loading = false
-        }
-    },
     mounted() { 
-        this.loadTable(this.table)
+        this.loadTable()
     },
     watch: {
         table(newTable : TableType, oldTable : TableType) {
-            this.loadTable(newTable)
+            
+            this.loadTable()
         }
     },
     setup(props) {
@@ -61,12 +40,33 @@ export default defineComponent({
         
         const editableHeaders = ref([] as Header[])
         // const itemsSelected = ref([] as Item[])
-        const loading = ref(items.value.length == 0)
+        const loading = ref(true)
         const isEditing = ref(false)
         const isAdding = ref(false)
         const editingItem = reactive({} as Item) // use header values as properties
         
         // methods
+        const loadTable = () => {
+            const table = props.table
+            loading.value = true
+            changedItems = []
+            //
+            headers.value = table.headers as Header[]
+            editableHeaders.value = table.headers.map(header => Object.assign({}, header)) // copy original table headers
+
+            if (headers.value.length == 0 || headers.value[headers.value.length - 1].text != "Operation")
+                headers.value.push({text: "Operation", value: "operation"})
+            //
+            items.value = table.items as Item[]
+            currentId.value = 0
+            console.log('Index drop down!')
+            for (let i = 0; i < items.value.length; i++) {
+                items.value[i].id = currentId.value++
+            }
+            //
+            loading.value = false
+        }
+
         const deleteItem = (row : Item) => {
             isEditing.value = false;
             items.value = items.value.filter((item) => item.id !== row.id)
@@ -129,8 +129,8 @@ export default defineComponent({
 
         // todo
         const discardChanges = () => {
-            // request to load the original table again (almost the same as reload)
-
+            // simply reload the original table (changes are deleted when loading)
+            loadTable()
         }
 
         // todo: sum up all the changes with the same id
@@ -154,11 +154,12 @@ export default defineComponent({
             editableHeaders, currentId,
             loading, 
             isEditing, isAdding, editingItem,
+            changedItems,
+            loadTable,
             editItem, submitEdit,
             addItem, submitAdd,
             cancelEditAdd,
             deleteItem, saveChange,
-            changedItems
         }
     }
 })
@@ -208,9 +209,6 @@ export default defineComponent({
         <button @click="submitEdit">OK</button>
     </div>
     
-    <div v-if="!isEditing && !isAdding">
-        <button @click="addItem">Add row</button>
-    </div>
 
     <div class="edit-item" v-if="isAdding">
         <p> Adding row </p>
@@ -220,7 +218,11 @@ export default defineComponent({
         <button @click="cancelEditAdd">Cancel</button>
         <button @click="submitAdd">OK</button>      
     </div>
-
+    
+    <div v-if="!isEditing && !isAdding">
+        <button @click="addItem">Add row</button>
+        <button @click="discardChanges">Discard changes</button>
+    </div>
 
 </template>
 
