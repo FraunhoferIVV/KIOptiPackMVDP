@@ -26,11 +26,14 @@ export default defineComponent({
             //
             this.headers = table.headers as Header[]
             this.editableHeaders = table.headers.map(header => Object.assign({}, header)) // copy original table headers
+            console.log(this.headers)
+            console.log(this.editableHeaders)
             if (this.headers.length == 0 || this.headers[this.headers.length - 1].text != "Operation")
                 this.headers.push({text: "Operation", value: "operation"})
             //
             this.items = table.items as Item[]
             this.currentId = 0
+            console.log('Index drop down!')
             for (let i = 0; i < this.items.length; i++) {
                 this.items[i].id = this.currentId++
             }
@@ -52,7 +55,7 @@ export default defineComponent({
         let changedItems: Item[] = [] 
 
         // reactive data
-        let currentId = 0
+        let currentId = ref(0)
         const headers = ref([] as Header[])
         const items = ref([] as Item[])
         
@@ -60,6 +63,7 @@ export default defineComponent({
         // const itemsSelected = ref([] as Item[])
         const loading = ref(items.value.length == 0)
         const isEditing = ref(false)
+        const isAdding = ref(false)
         const editingItem = reactive({} as Item) // use header values as properties
         
         // methods
@@ -71,6 +75,7 @@ export default defineComponent({
 
         // todo: find a better interface for row editing
         const editItem = (row : Item) => {
+            isAdding.value = false
             isEditing.value = true;
             Object.assign(editingItem, row)
         }
@@ -78,28 +83,47 @@ export default defineComponent({
         const submitEdit = () => {
             isEditing.value = false;
             const item : Item = items.value.find((item) => item.id === editingItem.id) || editingItem // default value for typescript to calm down
-            Object.assign(item, editingItem)
+            // Object.assign(item, editingItem)
+            copyInput(item)
             saveChange(editingItem, "EDIT")
         }
-        
-        // todo
-        const addItem = () => {
 
+        const copyInput = (to : Item) => {
+            for (let key in editingItem) {
+                if (!isNaN(+editingItem[key]))
+                    to[key] = +editingItem[key]
+                else
+                    to[key] = editingItem[key]
+            }
+        }
+        
+        const addItem = () => {
+            isAdding.value = true   
+            Object.keys(editingItem).forEach(key => delete editingItem[key])
         }
 
-        // todo
-        const submitAdding = () => {
+        const submitAdd = () => {
+            isAdding.value = false
+            const newItem = {id: currentId.value++} as Item
+            // Object.assign(newItem, editingItem)
+            copyInput(newItem)
+            items.value.push(newItem)
+            saveChange(editingItem, "ADD")
+        }
 
+        const cancelEditAdd = () => {
+            isEditing.value = isAdding.value = false;
         }
 
         const saveChange = (row : Item, changeType : String) => {
             // remove overhead from row and add changeType
-            delete row.id
-            delete row.index
-            delete row.key
-            row.changeType = changeType
-            changedItems.push(row as Item)
-            console.log(changedItems)
+            let resultRow = {changeType: changeType} as Item
+            Object.assign(resultRow, row)
+            delete resultRow.id
+            delete resultRow.index
+            delete resultRow.key
+            changedItems.push(resultRow as Item)
+            console.log(items.value)
         }
         
 
@@ -129,8 +153,11 @@ export default defineComponent({
             headers, items, 
             editableHeaders, currentId,
             loading, 
-            isEditing, editingItem,
-            editItem, submitEdit, deleteItem, saveChange,
+            isEditing, isAdding, editingItem,
+            editItem, submitEdit,
+            addItem, submitAdd,
+            cancelEditAdd,
+            deleteItem, saveChange,
             changedItems
         }
     }
@@ -169,13 +196,29 @@ export default defineComponent({
             </div>
         </template>
                 
+
     </EasyDataTable>
 
     <div class="edit-item" v-if="isEditing">
-        <div v-for="(header, index) in editableHeaders" :key="index">
-            <p> {{ header.text }} <input type="text" v-model="editingItem[header.value]" /> </p>
+        <p> Editing row </p>
+        <div v-for="(headerItem, index) in editableHeaders" :key="index">
+            <p> {{ headerItem.text }} <input type="text" v-model="editingItem[headerItem.value]" /> </p>
         </div>
-        <button @click="submitEdit">ok</button>
+        <button @click="cancelEditAdd">Cancel</button>
+        <button @click="submitEdit">OK</button>
+    </div>
+    
+    <div v-if="!isEditing && !isAdding">
+        <button @click="addItem">Add row</button>
+    </div>
+
+    <div class="edit-item" v-if="isAdding">
+        <p> Adding row </p>
+        <div v-for="(headerItem, index) in editableHeaders" :key="index">
+            <p> {{ headerItem.text }} <input type="text" v-model="editingItem[headerItem.value]" /> </p>
+        </div>
+        <button @click="cancelEditAdd">Cancel</button>
+        <button @click="submitAdd">OK</button>      
     </div>
 
 
