@@ -1,6 +1,6 @@
 <script lang="ts">
-import { defineComponent, ref, reactive} from 'vue';
-import type { PropType } from 'vue';
+import { defineComponent, defineEmits, ref, reactive} from 'vue';
+import type { PropType} from 'vue';
 
 import Vue3EasyDataTable from 'vue3-easy-data-table';
 import type { Header, Item } from "vue3-easy-data-table";
@@ -16,19 +16,20 @@ export default defineComponent({
             type: Object as PropType<TableType>
         }
     },
+    emits: ['changeTable'],
     components: {
         'EasyDataTable': Vue3EasyDataTable
     },
-    mounted() { 
+    created() { 
         this.loadTable()
     },
     watch: {
         table(newTable : TableType, oldTable : TableType) {
-            
+
             this.loadTable()
         }
     },
-    setup(props) {
+    setup(props, { emit }) {
         // datastructure for the future emit
         // save only added/edited/deleted Items (rows)
         let changedItems: Item[] = [] 
@@ -44,22 +45,25 @@ export default defineComponent({
         const isEditing = ref(false)
         const isAdding = ref(false)
         const editingItem = reactive({} as Item) // use header values as properties
+
         
         // methods
         const loadTable = () => {
+            console.log("Loading table: drop index and all changes down")
             const table = props.table
             loading.value = true
             changedItems = []
             //
             headers.value = table.headers as Header[]
-            editableHeaders.value = table.headers.map(header => Object.assign({}, header)) // copy original table headers
-
+            editableHeaders.value = table.headers.map(header => Object.assign({}, header)) // make a copy of table headers
+            if (editableHeaders.value.length == 0 || editableHeaders.value[editableHeaders.value.length - 1].text == "Operation") // remove operations only for editableItems
+                editableHeaders.value.pop()
             if (headers.value.length == 0 || headers.value[headers.value.length - 1].text != "Operation")
                 headers.value.push({text: "Operation", value: "operation"})
             //
             items.value = table.items as Item[]
             currentId.value = 0
-            console.log('Index drop down!')
+            
             for (let i = 0; i < items.value.length; i++) {
                 items.value[i].id = currentId.value++
             }
@@ -123,11 +127,8 @@ export default defineComponent({
             delete resultRow.index
             delete resultRow.key
             changedItems.push(resultRow as Item)
-            console.log(items.value)
         }
         
-
-        // todo
         const discardChanges = () => {
             // simply reload the original table (changes are deleted when loading)
             loadTable()
@@ -141,9 +142,7 @@ export default defineComponent({
         // todo
         const confirmChanges = () => {
             manageChanges()
-            // emit changedItems
-            // changes overview ?
-
+            emit('changeTable', changedItems)
         }
 
         
@@ -154,12 +153,13 @@ export default defineComponent({
             editableHeaders, currentId,
             loading, 
             isEditing, isAdding, editingItem,
-            changedItems,
+            changedItems, emit,
             loadTable,
             editItem, submitEdit,
             addItem, submitAdd,
-            cancelEditAdd,
-            deleteItem, saveChange,
+            cancelEditAdd, saveChange,
+            deleteItem, 
+            discardChanges, confirmChanges,
         }
     }
 })
@@ -222,6 +222,7 @@ export default defineComponent({
     <div v-if="!isEditing && !isAdding">
         <button @click="addItem">Add row</button>
         <button @click="discardChanges">Discard changes</button>
+        <button @click="confirmChanges">Confirm changes</button>
     </div>
 
 </template>

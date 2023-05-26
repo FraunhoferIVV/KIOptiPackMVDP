@@ -58,13 +58,20 @@ export default defineComponent({
                   ]
             this.table = {headers: headers, items: items}
          
+      },
+      handleChanges(changedItems : Item[]) {
+        console.log("Back to parent component:")
+        console.log(changedItems)
       }
   }
 })
 </script>
 
 <template>
-    <EditTable :table="table"/>
+    <EditTable 
+      :table="table"
+      @changeTable="handleChanges"
+    />
 </template>
 
 <style scoped>
