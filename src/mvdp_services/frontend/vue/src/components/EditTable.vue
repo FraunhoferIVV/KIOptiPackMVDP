@@ -39,7 +39,6 @@ export default defineComponent({
         const headers = ref([] as Header[])
         const items = ref([] as Item[])
         
-        const editableHeaders = ref([] as Header[])
         // const itemsSelected = ref([] as Item[])
         const loading = ref(true)
         const isEditing = ref(false)
@@ -54,14 +53,10 @@ export default defineComponent({
             loading.value = true
             changedItems = []
             //
-            headers.value = table.headers as Header[]
-            editableHeaders.value = table.headers.map(header => Object.assign({}, header)) // make a copy of table headers
-            if (editableHeaders.value.length == 0 || editableHeaders.value[editableHeaders.value.length - 1].text == "Operation") // remove operations only for editableItems
-                editableHeaders.value.pop()
-            if (headers.value.length == 0 || headers.value[headers.value.length - 1].text != "Operation")
-                headers.value.push({text: "Operation", value: "operation"})
+            headers.value = table.headers.map(header => Object.assign({}, header)) // make a copy of table headers
+            headers.value.push({text: "Operation", value: "operation"}) // operation overhead for headers
             //
-            items.value = table.items as Item[]
+            items.value = table.items.map(item => Object.assign({}, item)) // make a copy of table items
             currentId.value = 0
             
             for (let i = 0; i < items.value.length; i++) {
@@ -150,7 +145,7 @@ export default defineComponent({
         
         return {
             headers, items, 
-            editableHeaders, currentId,
+            currentId,
             loading, 
             isEditing, isAdding, editingItem,
             changedItems, emit,
@@ -202,7 +197,7 @@ export default defineComponent({
 
     <div class="edit-item" v-if="isEditing">
         <p> Editing row </p>
-        <div v-for="(headerItem, index) in editableHeaders" :key="index">
+        <div v-for="(headerItem, index) in table.headers" :key="index">
             <p> {{ headerItem.text }} <input type="text" v-model="editingItem[headerItem.value]" /> </p>
         </div>
         <button @click="cancelEditAdd">Cancel</button>
@@ -212,7 +207,7 @@ export default defineComponent({
 
     <div class="edit-item" v-if="isAdding">
         <p> Adding row </p>
-        <div v-for="(headerItem, index) in editableHeaders" :key="index">
+        <div v-for="(headerItem, index) in table.headers" :key="index">
             <p> {{ headerItem.text }} <input type="text" v-model="editingItem[headerItem.value]" /> </p>
         </div>
         <button @click="cancelEditAdd">Cancel</button>
