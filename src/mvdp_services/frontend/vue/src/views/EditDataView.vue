@@ -61,9 +61,12 @@ export default defineComponent({
          
       },
       handleChanges: async function (changedItems : Item[]) {
+        let formData = new FormData()
+        formData.append('changed_items', JSON.stringify(changedItems))
         await axios({
               method: 'put',
               url: constants.restBaseUrl + 'api/change_data',
+              data: formData,
               timeout: 5000
           }).then((res) => {
               console.log('Changes accomplished');

@@ -115,8 +115,10 @@ class FrontendService(FastIoTService):
             await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
         return "File successfully uploaded"
 
-    async def _handle_changes(self, changedItems : list = Form(...)):
-        for item in changedItems:
+    async def _handle_changes(self, changed_items: str = Form(...)):
+        changes = json.loads(changed_items)
+        self._logger.debug(changes)
+        for row in changes:
             pass
 
     async def _parse_file(self, data_file, data_delimiter: PossibleCSVDelimiters,
