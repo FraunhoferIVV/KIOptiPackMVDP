@@ -31,20 +31,20 @@ export default defineComponent({
       fetchTable: async function () {
         // the true code for table fetching
          
-          await axios({
-              method: 'get',
-              url: constants.restBaseUrl + 'api/table/data',
-              timeout: 5000
-          }).then((res) => {
-              const headers: Header[] = res.data.headers
-              const items: Item[] = res.data.items
-              this.table = {headers: headers, items: items}
-              console.log(this.table);
+        await axios({
+            method: 'get',
+            url: constants.restBaseUrl + 'api/table/data',
+            timeout: 5000
+        }).then((res) => {
+            const headers: Header[] = res.data.headers
+            const items: Item[] = res.data.items
+            this.table = {headers: headers, items: items}
+            console.log(this.table);
 
-          }, (error) => {
-              console.log('Can not establish connection to server to update table')
-              console.log(error)
-          })
+        }, (error) => {
+            console.log('Can not establish connection to server to update table')
+            console.log(error)
+        })
         
 
         // the following code is just for testing of the edit-table component; remove that code soon!
@@ -60,10 +60,18 @@ export default defineComponent({
         // this.table = {headers: headers, items: items}
          
       },
-      handleChanges(changedItems : Item[]) {
-        console.log('changedItems: ')
-        console.log(changedItems)
-        // todo: upload fetched changes via frontend service
+      handleChanges: async function (changedItems : Item[]) {
+        await axios({
+              method: 'put',
+              url: constants.restBaseUrl + 'api/change_data',
+              timeout: 5000
+          }).then((res) => {
+              console.log('Changes accomplished');
+          }, (error) => {
+              console.log('Can not establish connection to server to update data with changes')
+              console.log(error)
+          })
+
         this.fetchTable() // update table with current changes for child components
       }
   }

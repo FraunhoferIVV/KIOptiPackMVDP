@@ -48,6 +48,7 @@ class FrontendService(FastIoTService):
         self.app.get("/api/health_check")(self._health_check)
         self.app.get("/api/frontend_config")(self._send_config)
         self.app.post("/api/upload_data")(self._handle_upload)
+        self.app.put("/api/change_data")(self._handle_changes)
 
         table_editor = TableHandler()
         self.app.get("/api/table/data")(table_editor.return_table)
@@ -113,6 +114,10 @@ class FrontendService(FastIoTService):
             self._data_frame_validation(data_frame, material_id, timestamp_in_table)
             await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
         return "File successfully uploaded"
+
+    async def _handle_changes(self, changedItems : list = Form(...)):
+        for item in changedItems:
+            pass
 
     async def _parse_file(self, data_file, data_delimiter: PossibleCSVDelimiters,
                           decimal_delimiter: PossibleCSVDelimiters, file_type) -> Optional[pd.DataFrame]:
