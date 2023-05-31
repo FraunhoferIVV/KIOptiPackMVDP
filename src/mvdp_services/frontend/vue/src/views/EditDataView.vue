@@ -30,7 +30,7 @@ export default defineComponent({
   methods: {
       fetchTable: async function () {
         // the true code for table fetching
-        /* 
+         
           await axios({
               method: 'get',
               url: constants.restBaseUrl + 'api/table/data',
@@ -45,18 +45,19 @@ export default defineComponent({
               console.log('Can not establish connection to server to update table')
               console.log(error)
           })
-        */
-          // the following code is just for testing of the edit-table component; remove that code soon!
         
-            const headers : Header[] = [
-                      { text: "Sensor1", value: 's1'},
-                      { text: "Sensor2", value: 's2'}
-                  ]
-            const items : Item[] = [
-                      { s1: 1, s2: 2},
-                      { s1: 3, s2: 4}
-                  ]
-            this.table = {headers: headers, items: items}
+
+        // the following code is just for testing of the edit-table component; remove that code soon!
+
+        // const headers : Header[] = [
+        //           { text: "Sensor1", value: 's1'},
+        //           { text: "Sensor2", value: 's2'}
+        //       ]
+        // const items : Item[] = [
+        //           { s1: 1, s2: 2},
+        //           { s1: 3, s2: 4}
+        //       ]
+        // this.table = {headers: headers, items: items}
          
       },
       handleChanges(changedItems : Item[]) {

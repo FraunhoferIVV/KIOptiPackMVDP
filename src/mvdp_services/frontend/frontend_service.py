@@ -36,7 +36,6 @@ class FrontendService(FastIoTService):
         self._register_routes()
         self.server = UvicornAsyncServer(self.app, port=env_frontend.port)
 
-
     def _register_routes(self):
         self.app.add_middleware(
             CORSMiddleware,

@@ -1,8 +1,9 @@
 import pandas as pd
-from fastapi import Response
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
+from fastiot.msg import Thing
 from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
+from fastiot.util.object_helper import parse_object_list
 
 from mvdp.tools.dataprovider_functions import things_to_rows
 from mvdp_services.frontend.api_response_msg import Table
@@ -19,7 +20,7 @@ class TableHandler:
         """
 
         result = self.mongodb_col.find({})  # create list of things
-        things = list(map(from_mongo_data, result))
+        things = parse_object_list(list(map(from_mongo_data, result)), Thing)
         rows = things_to_rows(things)
         data_frame = pd.DataFrame.from_records(rows)
         # sort columns and log the table
@@ -30,6 +31,6 @@ class TableHandler:
             response = Table(headers=[{'text': str(c), 'value': str(c), 'sortable': True} for c in data_frame.columns],
                              items=data_frame.to_dict(orient="records"))
         else:
-            response = Table(headers=[{"text": "No Data", "value": "No Data"}], items=[{"No Data": "No Data"}])
+            response = Table(headers=[{"text": "No Data", "value": "No Data"}], items=[])
 
         return response
