@@ -60,6 +60,8 @@ export default defineComponent({
          
       },
       handleChanges(changedItems : Item[]) {
+        console.log('changedItems: ')
+        console.log(changedItems)
         // todo: upload fetched changes via frontend service
         this.fetchTable() // update table with current changes for child components
       }

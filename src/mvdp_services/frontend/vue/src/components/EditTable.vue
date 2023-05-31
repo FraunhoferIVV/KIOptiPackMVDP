@@ -7,6 +7,7 @@ import type { Header, Item } from "vue3-easy-data-table";
 import 'vue3-easy-data-table/dist/style.css';
 
 import type TableType from '@/types/TableType';
+import type ChangesDictionaryType from '@/types/ChangesDictionaryType';
 
 // using vue3-easy-data-table
 export default defineComponent({
@@ -55,13 +56,14 @@ export default defineComponent({
             //
             headers.value = table.headers.map(header => Object.assign({}, header)) // make a copy of table headers
             headers.value.push({text: "Operation", value: "operation"}) // operation overhead for headers
+            // create id for each table item
+            currentId.value = 0
+            for (const item of table.items) {
+                item.id = currentId.value++
+            }
             //
             items.value = table.items.map(item => Object.assign({}, item)) // make a copy of table items
-            currentId.value = 0
             
-            for (let i = 0; i < items.value.length; i++) {
-                items.value[i].id = currentId.value++
-            }
             //
             loading.value = false
         }
@@ -81,10 +83,10 @@ export default defineComponent({
 
         const submitEdit = () => {
             isEditing.value = false;
-            const item : Item = items.value.find((item) => item.id === editingItem.id) || editingItem // default value for typescript to calm down
+            const item : Item = items.value.find((item) => item.id == editingItem.id) || editingItem // default value for typescript to calm down
             // Object.assign(item, editingItem)
             copyInput(item)
-            saveChange(editingItem, "EDIT")
+            saveChange(item, "EDIT")
         }
 
         const copyInput = (to : Item) => {
@@ -107,7 +109,7 @@ export default defineComponent({
             // Object.assign(newItem, editingItem)
             copyInput(newItem)
             items.value.push(newItem)
-            saveChange(editingItem, "ADD")
+            saveChange(newItem, "ADD")
         }
 
         const cancelEditAdd = () => {
@@ -118,7 +120,6 @@ export default defineComponent({
             // remove overhead from row and add changeType
             let resultRow = {changeType: changeType} as Item
             Object.assign(resultRow, row)
-            delete resultRow.id
             delete resultRow.index
             delete resultRow.key
             changedItems.push(resultRow as Item)
@@ -129,15 +130,63 @@ export default defineComponent({
             loadTable()
         }
 
-        // todo: sum up all the changes with the same id
+        // one change per id (also removes ids)
         const manageChanges = () => {
-
+            let changesDictionary : ChangesDictionaryType = {} as ChangesDictionaryType
+            for (const item of changedItems as Item[]) {
+                const id = item.id as number
+                delete item.id
+                if (!changesDictionary.hasOwnProperty(id)) {
+                    changesDictionary[id] = item
+                    continue
+                }
+                // else: this item has already been changed before
+                let savedItem = changesDictionary[id]
+                // 1: ADD -> *
+                if (savedItem.changeType == 'ADD') { 
+                    if (item.changeType == 'ADD') {
+                        throw new Error('id reused!')
+                        return []
+                    } else if (item.changeType == 'EDIT') {
+                        item.ChangeType = 'ADD'
+                        changesDictionary[id] = Object.assign({}, item)
+                    } else if (item.changeType == 'DELETE') {
+                        delete changesDictionary[id]
+                    }
+                }
+                // 2: EDIT -> *
+                if (savedItem.changeType == 'EDIT') { 
+                    if (item.changeType == 'ADD') {
+                        throw new Error('id reused!')
+                        return []
+                    } else if (item.changeType == 'EDIT') {
+                        changesDictionary[id] = Object.assign({}, item)
+                    } else if (item.changeType == 'DELETE') {
+                        // delete original object
+                        const originalItem = props.table.items.find((item) => item.id == id)
+                        const copyItem = Object.assign({}, originalItem) as Item
+                        delete copyItem.id
+                        copyItem.changeType = 'DELETE'
+                       changesDictionary[id] = copyItem
+                    }
+                }
+                 // 3: DELETE -> *
+                if (savedItem.changeType == 'DELETE') { 
+                    throw new Error('id reused!')
+                    return []
+                }
+                
+            }
+            // prepare changedItems for emit
+            changedItems = []
+            for (let id in changesDictionary) {
+                changedItems.push(changesDictionary[id])
+            }
+            return changedItems
         }
 
-        // todo
         const confirmChanges = () => {
-            manageChanges()
-            emit('changeTable', changedItems)
+            emit('changeTable', manageChanges())
         }
 
         
@@ -148,11 +197,11 @@ export default defineComponent({
             currentId,
             loading, 
             isEditing, isAdding, editingItem,
-            changedItems, emit,
+            changedItems,
             loadTable,
             editItem, submitEdit,
             addItem, submitAdd,
-            cancelEditAdd, saveChange,
+            cancelEditAdd,
             deleteItem, 
             discardChanges, confirmChanges,
         }
