@@ -27,6 +27,9 @@ class TableHandler:
         data_frame = data_frame[list(data_frame.columns.values)[:2] +
                                 sorted(list(data_frame.columns.values)[2:])]
 
+        # quickfix for table with different columns
+        data_frame = data_frame.fillna('no_values')
+
         if len(data_frame.columns) > 0:
             response = Table(headers=[{'text': str(c), 'value': str(c), 'sortable': True} for c in data_frame.columns],
                              items=data_frame.to_dict(orient="records"))
