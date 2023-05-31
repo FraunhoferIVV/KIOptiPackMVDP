@@ -115,12 +115,6 @@ class FrontendService(FastIoTService):
             await self._data_frame_send_things(data_frame, material_id, timestamp_in_table)
         return "File successfully uploaded"
 
-    async def _handle_changes(self, changed_items: str = Form(...)):
-        changes = json.loads(changed_items)
-        self._logger.debug(changes)
-        for row in changes:
-            pass
-
     async def _parse_file(self, data_file, data_delimiter: PossibleCSVDelimiters,
                           decimal_delimiter: PossibleCSVDelimiters, file_type) -> Optional[pd.DataFrame]:
         file_type = file_type.lower()
@@ -183,6 +177,27 @@ class FrontendService(FastIoTService):
         await self.broker_connection.publish(subject=ArbitraryJSONMessage.get_subject(),
                                              msg=message)
 
+    async def _handle_changes(self, changed_items: str = Form(...)):
+        changes = json.loads(changed_items)
+        self._logger.debug(changes)
+        for row in changes:
+            change_type = row.pop('changeType', None)
+            if change_type == 'ADD':
+                self._save_things(row)
+            elif change_type == 'EDIT':  # make sure overwriting is on!
+                self._save_things(row)
+            elif change_type == 'DELETE':
+                self._delete_things(row)
+            else:
+                raise HTTPException(status_code=500, detail=f'Unknown change type {change_type}')
+
+    async def _save_things(self, row: dict):
+        # TODO: implement the function
+        pass
+
+    async def _delete_things(selfs, row: dict):
+        # TODO: implement the function
+        pass
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
