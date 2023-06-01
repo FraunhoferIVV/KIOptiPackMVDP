@@ -77,6 +77,11 @@ def things_to_rows(things: List[Thing]) -> List[dict]:
             row_now = {'Timestamp': thing.timestamp,
                        'Material_ID': thing.measurement_id}  # init current row
             key_now = thing_key  # set current key_now
-        row_now[thing.name] = str(thing.value) + ' ' + str(thing.unit)  # create new table cell
+        # create new table cell
+        if thing.unit:
+            row_now[thing.name] = str(thing.value) + ' ' + str(thing.unit)
+        else:
+            row_now[thing.name] = thing.value
+
     rows.append(row_now)  # push the last row
     return rows
