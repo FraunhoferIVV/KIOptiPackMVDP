@@ -15,6 +15,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastiot.core import FastIoTService, ReplySubject
 from fastiot.core.time import get_time_now
+from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
+from fastiot.env import env_mongodb
+from fastiot.msg.custom_db_data_type_conversion import to_mongo_data
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
@@ -35,6 +38,10 @@ class FrontendService(FastIoTService):
         self.app = FastAPI()
         self._register_routes()
         self.server = UvicornAsyncServer(self.app, port=env_frontend.port)
+
+        # init database for direct interaction (for example delete operation)
+        database = get_mongodb_client_from_env().get_database(env_mongodb.name)
+        self.mongodb_col = database.get_collection(env_frontend.mongodb_collection)
 
     def _register_routes(self):
         self.app.add_middleware(
@@ -187,14 +194,16 @@ class FrontendService(FastIoTService):
             elif change_type == 'EDIT':  # make sure overwriting is on!
                 await self._save_things(row)
             elif change_type == 'DELETE':
-                await self._delete_things(row)
+                self._delete_things(row)
             else:
                 raise HTTPException(status_code=500, detail=f'Unknown change type {change_type}')
 
-    async def _save_things(self, row: dict):
+    @staticmethod
+    def _things_from_row(row):
         attributes = [column for column in row.keys()
                       if (column != 'Material_ID' and column != 'Timestamp')]
         # create things from row
+        things = []
         for attr in attributes:
             # these attributes must be always present in a row build from things
             measurement_id = row['Material_ID']
@@ -203,12 +212,19 @@ class FrontendService(FastIoTService):
             thing = Thing(machine=env_frontend.frontend_title,
                           name=attr, measurement_id=measurement_id,
                           value=row[attr], timestamp=timestamp)
+            things.append(thing)
+        return things
 
+    async def _save_things(self, row: dict):
+        for thing in FrontendService._things_from_row(row):
             await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"), msg=thing)
 
-    async def _delete_things(self, row: dict):
-        # TODO: implement the function
-        pass
+    def _delete_things(self, row: dict):
+        for thing in FrontendService._things_from_row(row):
+            delete_query = vars(thing)
+            result = self.mongodb_col.delete_one(delete_query)
+            self._logger.debug(f"Documents deleted: {result.deleted_count}")
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
