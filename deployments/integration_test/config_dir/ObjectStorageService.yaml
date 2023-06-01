@@ -10,6 +10,7 @@ subscriptions:
     reply_subject_name: 'objects'
     enable_overwriting: true
     identify_object_with:
+      - "_timestamp"
       - "measurement_id"
       - "name"
 
