@@ -118,10 +118,17 @@ export default defineComponent({
 
         const saveChange = (row : Item, changeType : String) => {
             // remove overhead from row and add changeType
+            // create resultRow with all empty fields and changeType
             let resultRow = {changeType: changeType} as Item
+            for (const header of props.table.headers) {
+                resultRow[header.text] = ''
+            }
+            // overwrite non empty fields
             Object.assign(resultRow, row)
+            // delete overhead except of id
             delete resultRow.index
             delete resultRow.key
+            // save resultRow as item ready for future managing
             changedItems.push(resultRow as Item)
         }
         
@@ -187,6 +194,7 @@ export default defineComponent({
 
         const confirmChanges = () => {
             emit('changeTable', manageChanges())
+            loading.value = true
         }
 
         

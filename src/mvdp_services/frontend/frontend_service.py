@@ -198,16 +198,27 @@ class FrontendService(FastIoTService):
             else:
                 raise HTTPException(status_code=500, detail=f'Unknown change type {change_type}')
 
-    @staticmethod
-    def _things_from_row(row):
+    def _things_from_row(self, row):
         attributes = [column for column in row.keys()
                       if (column != 'Material_ID' and column != 'Timestamp')]
+        row_timestamp = get_time_now()
         # create things from row
         things = []
         for attr in attributes:
             # these attributes must be always present in a row build from things
-            measurement_id = row['Material_ID']
-            timestamp = pd.Timestamp(row['Timestamp']).to_pydatetime()
+            try:
+                measurement_id = row['Material_ID']
+            except Exception:
+                raise HTTPException(status_code=500, detail="No Material_Id!")
+
+            try:
+                if not row['Timestamp']:
+                    raise Exception()
+                timestamp = pd.Timestamp(row['Timestamp']).to_pydatetime()
+            except Exception:
+                self._logger.warning("Couldn't parse timestamp: using the current time")
+                timestamp = row_timestamp
+
             # create thing
             thing = Thing(machine=env_frontend.frontend_title,
                           name=attr, measurement_id=measurement_id,
@@ -216,11 +227,11 @@ class FrontendService(FastIoTService):
         return things
 
     async def _save_things(self, row: dict):
-        for thing in FrontendService._things_from_row(row):
+        for thing in self._things_from_row(row):
             await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"), msg=thing)
 
     def _delete_things(self, row: dict):
-        for thing in FrontendService._things_from_row(row):
+        for thing in self._things_from_row(row):
             delete_query = vars(thing)
             result = self.mongodb_col.delete_one(delete_query)
             self._logger.debug(f"Documents deleted: {result.deleted_count}")
