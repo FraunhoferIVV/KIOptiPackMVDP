@@ -183,19 +183,30 @@ class FrontendService(FastIoTService):
         for row in changes:
             change_type = row.pop('changeType', None)
             if change_type == 'ADD':
-                self._save_things(row)
+                await self._save_things(row)
             elif change_type == 'EDIT':  # make sure overwriting is on!
-                self._save_things(row)
+                await self._save_things(row)
             elif change_type == 'DELETE':
-                self._delete_things(row)
+                await self._delete_things(row)
             else:
                 raise HTTPException(status_code=500, detail=f'Unknown change type {change_type}')
 
     async def _save_things(self, row: dict):
-        # TODO: implement the function
-        pass
+        attributes = [column for column in row.keys()
+                      if (column != 'Material_ID' and column != 'Timestamp')]
+        # create things from row
+        for attr in attributes:
+            # these attributes must be always present in a row build from things
+            measurement_id = row['Material_ID']
+            timestamp = pd.Timestamp(row['Timestamp']).to_pydatetime()
+            # create thing
+            thing = Thing(machine=env_frontend.frontend_title,
+                          name=attr, measurement_id=measurement_id,
+                          value=row[attr], timestamp=timestamp)
 
-    async def _delete_things(selfs, row: dict):
+            await self.broker_connection.publish(subject=Thing.get_subject("DataImporter"), msg=thing)
+
+    async def _delete_things(self, row: dict):
         # TODO: implement the function
         pass
 
