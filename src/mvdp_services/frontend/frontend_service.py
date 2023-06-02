@@ -207,6 +207,8 @@ class FrontendService(FastIoTService):
         for attr in attributes:
             # these attributes must be always present in a row build from things
             try:
+                if not row['Material_ID']:
+                    raise Exception()
                 measurement_id = row['Material_ID']
             except Exception:
                 raise HTTPException(status_code=500, detail="No Material_Id!")

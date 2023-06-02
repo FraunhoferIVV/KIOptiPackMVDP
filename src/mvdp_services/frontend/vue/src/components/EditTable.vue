@@ -41,11 +41,10 @@ export default defineComponent({
         
         // methods
         const loadTable = () => {
-            console.log(props.table)
             console.log("Loading table: drop index and all changes down")
             const table = props.table
             loading.value = true
-            changedItems = []
+            changedItems = [] 
             //
             headers.value = table.headers.map(header => Object.assign({}, header)) // make a copy of table headers
             headers.value.push({text: "Operation", value: "operation"}) // operation overhead for headers
@@ -94,6 +93,8 @@ export default defineComponent({
             isEditing.value = false
             isAdding.value = true   
             Object.keys(editingItem).forEach(key => delete editingItem[key])
+            editingItem.id = currentId.value++
+            items.value.push(editingItem)
         }
 
         const submitAdd = () => {
@@ -101,11 +102,15 @@ export default defineComponent({
             const newItem = {id: currentId.value++} as Item
             // Object.assign(newItem, editingItem)
             copyInput(newItem)
+            items.value.pop()
             items.value.push(newItem)
             saveChange(newItem, "ADD")
         }
 
         const cancelEditAdd = () => {
+            if (isAdding) {
+                items.value.pop()
+            }
             isEditing.value = isAdding.value = false;
         }
 
@@ -194,20 +199,16 @@ export default defineComponent({
             return 'item-' + headerValue
         }
 
+        const isEditingAddingId = (id: number) => {
+            return ((isEditing.value || isAdding.value) && editingItem.id == id)
+        }
+
         const isEditingId = (id: number) => {
             return (isEditing.value && editingItem.id == id)
         }
 
-        const blockTable = () => {
-            loading.value = true
-        }
-
-        const checkUpdate = async function(table : TableType) {
-            return new Promise((resolve) => {
-                if (JSON.stringify(table) === JSON.stringify(props.table)) {
-                    resolve(true)
-                }
-            })
+        const isAddingId = (id: number) => {
+            return (isAdding.value && editingItem.id == id)
         }
 
         
@@ -226,8 +227,8 @@ export default defineComponent({
             cancelEditAdd,
             deleteItem, 
             discardChanges, confirmChanges,
-            makeSlotName, isEditingId,
-            blockTable, checkUpdate
+            makeSlotName,
+            isEditingId, isAddingId, isEditingAddingId
         }
     }
 })
@@ -258,13 +259,13 @@ export default defineComponent({
                     @click="deleteItem(item)"
                 />
                 <img 
-                    v-if="!isEditingId(item.id)"
+                    v-if="!isEditingAddingId(item.id)"
                     src="@/assets/edit.png"
                     class="operation-icon"
                     @click="editItem(item)"
                 />
                 <img
-                    v-if="isEditingId(item.id)"
+                    v-if="isEditingAddingId(item.id)"
                     src="@/assets/cancel.png"
                     class="operation-icon"
                     @click="cancelEditAdd"
@@ -275,6 +276,12 @@ export default defineComponent({
                     class="operation-icon"
                     @click="submitEdit"
                 />
+                <img
+                    v-if="isAddingId(item.id)"
+                    src="@/assets/ok.png"
+                    class="operation-icon"
+                    @click="submitAdd"
+                />
             </div>
 
         </template>
@@ -283,29 +290,14 @@ export default defineComponent({
             :key="index"
             #[makeSlotName(headerItem.value)]="item">
             <input type="text"
-                v-if="isEditingId(item.id)"
+                v-if="isEditingAddingId(item.id)"
                 v-model="editingItem[headerItem.value]"
             />
             <p v-else>{{ item[headerItem.value] }}</p>         
         </template>
 
-    </EasyDataTable>
+    </EasyDataTable>    
 
-    <div class="edit-item" v-if="isEditing">
-        <button @click="cancelEditAdd">Cancel</button>
-        <button @click="submitEdit">OK</button>
-    </div>
-    
-
-    <div class="edit-item" v-if="isAdding">
-        <p> Adding row </p>
-        <div v-for="(headerItem, index) in table.headers" :key="index">
-            <p> {{ headerItem.text }} <input type="text" v-model="editingItem[headerItem.value]" /> </p>
-        </div>
-        <button @click="cancelEditAdd">Cancel</button>
-        <button @click="submitAdd">OK</button>      
-    </div>
-    
     <div v-if="!isEditing && !isAdding">
         <button @click="addItem">Add row</button>
         <button @click="discardChanges">Discard changes</button>
