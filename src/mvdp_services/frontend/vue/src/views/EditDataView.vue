@@ -45,11 +45,8 @@ export default defineComponent({
             console.log(error)
         });
 
-        (this.$refs.table as any).blockTable();
-        await (this.$refs.table as any).checkUpdate(this.table).then((res : boolean) => {
-          (this.$refs.table as any).loadTable()
-        })
-        
+        // reload the table from the child comonent
+        (this.$refs.table as any).loadTable()
       },
       handleChanges: async function (changedItems : Item[]) {
         let formData = new FormData()
@@ -66,7 +63,11 @@ export default defineComponent({
               console.log(error)
           })
 
-        this.fetchTable() // update table with current changes for child components
+        console.log('here')
+        // wait until all changes are applied on the database
+        setTimeout(() => {
+          this.fetchTable() // update table with current changes for child components
+        }, 500)
       }
   },
 })
