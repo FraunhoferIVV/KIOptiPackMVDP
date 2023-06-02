@@ -289,7 +289,7 @@ export default defineComponent({
         <template v-for="(headerItem, index) in table.headers"
             :key="index"
             #[makeSlotName(headerItem.value)]="item">
-            <input type="text"
+            <input class="form-control" type="text"
                 v-if="isEditingAddingId(item.id)"
                 v-model="editingItem[headerItem.value]"
             />
@@ -299,9 +299,9 @@ export default defineComponent({
     </EasyDataTable>    
 
     <div v-if="!isEditing && !isAdding">
-        <button @click="addItem">Add row</button>
-        <button @click="discardChanges">Discard changes</button>
-        <button @click="confirmChanges">Confirm changes</button>
+        <button @click="addItem" class="btn btn-secondary">Add row</button>
+        <button @click="discardChanges" class="btn btn-danger">Discard changes</button>
+        <button @click="confirmChanges" class="btn btn-primary">Confirm changes</button>
     </div>
 
 </template>
