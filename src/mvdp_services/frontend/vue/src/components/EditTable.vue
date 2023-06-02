@@ -61,13 +61,13 @@ export default defineComponent({
         }
 
         const deleteItem = (row : Item) => {
-            isEditing.value = false;
+            cancelEditAdd()
             items.value = items.value.filter((item) => item.id !== row.id)
             saveChange(row, "DELETE")
         }
 
         const editItem = (row : Item) => {
-            isAdding.value = false
+            cancelEditAdd()
             isEditing.value = true;
             Object.assign(editingItem, row)
         }
@@ -90,9 +90,8 @@ export default defineComponent({
         }
         
         const addItem = () => {
-            isEditing.value = false
+            cancelEditAdd() 
             isAdding.value = true   
-            Object.keys(editingItem).forEach(key => delete editingItem[key])
             editingItem.id = currentId.value++
             items.value.push(editingItem)
         }
@@ -108,10 +107,11 @@ export default defineComponent({
         }
 
         const cancelEditAdd = () => {
-            if (isAdding) {
+            if (isAdding.value) {
                 items.value.pop()
             }
             isEditing.value = isAdding.value = false;
+            Object.keys(editingItem).forEach(key => delete editingItem[key]) // important for adding
         }
 
         const saveChange = (row : Item, changeType : String) => {
