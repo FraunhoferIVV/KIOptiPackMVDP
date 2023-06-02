@@ -44,6 +44,7 @@ export default defineComponent({
         const loading = ref(true)
         const isEditing = ref(false)
         const isAdding = ref(false)
+
         const editingItem = reactive({} as Item) // use header values as properties
 
         
@@ -201,6 +202,11 @@ export default defineComponent({
             return 'item-' + headerValue
         }
 
+        const isEditingId = (id: number) => {
+            console.log('recount')
+            return (isEditing.value && editingItem.id == id)
+        }
+
         
         console.log('EditTable component: Setup completed')
 
@@ -218,7 +224,7 @@ export default defineComponent({
             cancelEditAdd,
             deleteItem, 
             discardChanges, confirmChanges,
-            makeSlotName
+            makeSlotName, isEditingId
         }
     }
 })
@@ -260,19 +266,16 @@ export default defineComponent({
         <template v-for="(headerItem, index) in table.headers"
             :key="index"
             #[makeSlotName(headerItem.value)]="item">
-            <p>{{ item[headerItem.value] }}</p>         
+            <input type="text"
+                v-if="isEditingId(item.id)"
+                v-model="editingItem[headerItem.value]"
+            />
+            <p v-else>{{ item[headerItem.value] }}</p>         
         </template>
-
-        
-                
 
     </EasyDataTable>
 
     <div class="edit-item" v-if="isEditing">
-        <p> Editing row </p>
-        <div v-for="(headerItem, index) in table.headers" :key="index">
-            <p> {{ headerItem.text }} <input type="text" v-model="editingItem[headerItem.value]" /> </p>
-        </div>
         <button @click="cancelEditAdd">Cancel</button>
         <button @click="submitEdit">OK</button>
     </div>
