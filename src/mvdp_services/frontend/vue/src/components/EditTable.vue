@@ -21,15 +21,6 @@ export default defineComponent({
     components: {
         'EasyDataTable': Vue3EasyDataTable
     },
-    created() { 
-        this.loadTable()
-    },
-    watch: {
-        table(newTable : TableType, oldTable : TableType) {
-
-            this.loadTable()
-        }
-    },
     setup(props, { emit }) {
         // datastructure for the future emit
         // save only added/edited/deleted Items (rows)
@@ -50,6 +41,7 @@ export default defineComponent({
         
         // methods
         const loadTable = () => {
+            console.log(props.table)
             console.log("Loading table: drop index and all changes down")
             const table = props.table
             loading.value = true
@@ -206,10 +198,21 @@ export default defineComponent({
             return (isEditing.value && editingItem.id == id)
         }
 
+        const blockTable = () => {
+            loading.value = true
+        }
+
+        const checkUpdate = async function(table : TableType) {
+            return new Promise((resolve) => {
+                if (JSON.stringify(table) === JSON.stringify(props.table)) {
+                    resolve(true)
+                }
+            })
+        }
+
         
         console.log('EditTable component: Setup completed')
 
-        const c = "item-Sensor_A"
         
         return {
             headers, items,
@@ -223,7 +226,8 @@ export default defineComponent({
             cancelEditAdd,
             deleteItem, 
             discardChanges, confirmChanges,
-            makeSlotName, isEditingId
+            makeSlotName, isEditingId,
+            blockTable, checkUpdate
         }
     }
 })
