@@ -75,7 +75,6 @@ export default defineComponent({
             saveChange(row, "DELETE")
         }
 
-        // todo: find a better interface for row editing
         const editItem = (row : Item) => {
             isAdding.value = false
             isEditing.value = true;
@@ -100,6 +99,7 @@ export default defineComponent({
         }
         
         const addItem = () => {
+            isEditing.value = false
             isAdding.value = true   
             Object.keys(editingItem).forEach(key => delete editingItem[key])
         }
@@ -203,7 +203,6 @@ export default defineComponent({
         }
 
         const isEditingId = (id: number) => {
-            console.log('recount')
             return (isEditing.value && editingItem.id == id)
         }
 
@@ -250,14 +249,27 @@ export default defineComponent({
         <template #item-operation="item">
             <div class="operation-wrapper">
                 <img
-                src="@/assets/delete.png"
-                class="operation-icon"
-                @click="deleteItem(item)"
+                    src="@/assets/delete.png"
+                    class="operation-icon"
+                    @click="deleteItem(item)"
+                />
+                <img 
+                    v-if="!isEditingId(item.id)"
+                    src="@/assets/edit.png"
+                    class="operation-icon"
+                    @click="editItem(item)"
                 />
                 <img
-                src="@/assets/edit.png"
-                class="operation-icon"
-                @click="editItem(item)"
+                    v-if="isEditingId(item.id)"
+                    src="@/assets/cancel.png"
+                    class="operation-icon"
+                    @click="cancelEditAdd"
+                />
+                <img
+                    v-if="isEditingId(item.id)"
+                    src="@/assets/ok.png"
+                    class="operation-icon"
+                    @click="submitEdit"
                 />
             </div>
 
