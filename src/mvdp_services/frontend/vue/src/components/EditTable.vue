@@ -197,11 +197,17 @@ export default defineComponent({
             loading.value = true
         }
 
+        const makeSlotName = (headerValue : string) => {
+            return 'item-' + headerValue
+        }
+
         
         console.log('EditTable component: Setup completed')
+
+        const c = "item-Sensor_A"
         
         return {
-            headers, items, 
+            headers, items,
             currentId,
             loading, 
             isEditing, isAdding, editingItem,
@@ -212,6 +218,7 @@ export default defineComponent({
             cancelEditAdd,
             deleteItem, 
             discardChanges, confirmChanges,
+            makeSlotName
         }
     }
 })
@@ -247,7 +254,16 @@ export default defineComponent({
                 @click="editItem(item)"
                 />
             </div>
+
         </template>
+         
+        <template v-for="(headerItem, index) in table.headers"
+            :key="index"
+            #[makeSlotName(headerItem.value)]="item">
+            <p>{{ item[headerItem.value] }}</p>         
+        </template>
+
+        
                 
 
     </EasyDataTable>
