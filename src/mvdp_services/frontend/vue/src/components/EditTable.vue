@@ -106,6 +106,14 @@ export default defineComponent({
             saveChange(newItem, "ADD")
         }
 
+        const submit = () => {
+            if (isEditing.value) {
+                submitEdit()
+            } else if (isAdding.value) {
+                submitAdd()
+            }
+        }
+
         const cancelEditAdd = () => {
             if (isAdding.value) {
                 items.value.pop()
@@ -224,7 +232,7 @@ export default defineComponent({
             loadTable,
             editItem, submitEdit,
             addItem, submitAdd,
-            cancelEditAdd,
+            submit, cancelEditAdd,
             deleteItem, 
             discardChanges, confirmChanges,
             makeSlotName,
@@ -276,7 +284,7 @@ export default defineComponent({
                     class="operation-icon"
                     @click="submitEdit"
                 />
-                <img
+                <img             
                     v-if="isAddingId(item.id)"
                     src="@/assets/ok.png"
                     class="operation-icon"
@@ -292,8 +300,10 @@ export default defineComponent({
             <input class="form-control" type="text"
                 v-if="isEditingAddingId(item.id)"
                 v-model="editingItem[headerItem.value]"
+                @keydown.enter="submit"
             />
-            <p v-else>{{ item[headerItem.value] }}</p>         
+            <p v-else
+             @dblclick="editItem(item)">{{ item[headerItem.value] }}</p>         
         </template>
 
     </EasyDataTable>    
