@@ -61,9 +61,9 @@ export default defineComponent({
         }
 
         const deleteItem = (row : Item) => {
-            cancelEditAdd()
             items.value = items.value.filter((item) => item.id !== row.id)
             saveChange(row, "DELETE")
+            cancelEditAdd() // enable editingItem to be deleted
         }
 
         const editItem = (row : Item) => {
@@ -312,6 +312,30 @@ export default defineComponent({
         <button @click="addItem" class="btn btn-secondary">Add row</button>
         <button @click="discardChanges" class="btn btn-danger">Discard changes</button>
         <button @click="confirmChanges" class="btn btn-primary">Confirm changes</button>
+        <div v-if="isAdding || isEditing">
+            <img
+                src="@/assets/delete.png"
+                class="operation-icon"
+                @click="deleteItem(editingItem)"
+            />
+            <img
+                src="@/assets/cancel.png"
+                class="operation-icon"
+                @click="cancelEditAdd"
+            />
+            <img
+                v-if="isEditingId(editingItem.id)"
+                src="@/assets/ok.png"
+                class="operation-icon"
+                @click="submitEdit"
+            />
+            <img             
+                v-if="isAddingId(editingItem.id)"
+                src="@/assets/ok.png"
+                class="operation-icon"
+                @click="submitAdd"
+            />
+        </div>      
     </div>
 
 </template>
