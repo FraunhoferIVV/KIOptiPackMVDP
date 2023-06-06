@@ -308,7 +308,7 @@ export default defineComponent({
 
     </EasyDataTable>    
 
-    <div v-if="!isEditing && !isAdding">
+    <div>
         <button @click="addItem" class="btn btn-secondary">Add row</button>
         <button @click="discardChanges" class="btn btn-danger">Discard changes</button>
         <button @click="confirmChanges" class="btn btn-primary">Confirm changes</button>

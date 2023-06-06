@@ -232,7 +232,7 @@ export default defineComponent({
             axios.get(getUrl).
                 then((res) => {
                     console.log(res)
-                    this.materialOptions = JSON.parse(res.data)
+                    this.materialOptions = res.data
                 }, (error) => {
                     console.log(error)
                     this.uploadMessage.content = 'Can not load Material_ID hints!'
