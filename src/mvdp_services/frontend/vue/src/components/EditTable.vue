@@ -142,6 +142,7 @@ export default defineComponent({
         
         const discardChanges = () => {
             // simply reload the original table (changes are deleted when loading)
+            cancelEditAdd()
             loadTable()
         }
 
@@ -201,12 +202,17 @@ export default defineComponent({
         }
 
         const confirmChanges = () => {
+            cancelEditAdd()
             emit('changeTable', manageChanges())
             loading.value = true
         }
 
-        const makeSlotName = (headerValue : string) => {
+        const makeItemSlotName = (headerValue : string) => {
             return 'item-' + headerValue
+        }
+
+        const makeHeaderSlotName = (headerValue : string) => {
+            return 'header-' + headerValue
         }
 
         const isEditingAddingId = (id: number) => {
@@ -237,7 +243,7 @@ export default defineComponent({
             submit, cancelEditAdd,
             deleteItem, 
             discardChanges, confirmChanges,
-            makeSlotName,
+            makeItemSlotName, makeHeaderSlotName,
             isEditingId, isAddingId, isEditingAddingId
         }
     }
@@ -249,83 +255,172 @@ export default defineComponent({
 
 <template>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <div class="container table">   
+        <EasyDataTable
+            :headers="headers"
+            :items="items"
+            :loading="loading"
+            show-index
+            alternating
+            border-cell
+            buttons-pagination
+        >
+            <template #loading>
+                <img src="@/assets/ivv-logo.png" alt="" style="float: right;">
+            </template>
+            
+            <template #item-operation="item">
+                <div class="operation__wrapper">
+                    <div class="operation__icon" 
+                        @click="deleteItem(item.id)">
+                        <i class="fa fa-trash fa-2x fa-fw" aria-hidden="true"></i>
+                    </div>
+                    <div class="operation__icon" 
+                        v-if="!isEditingAddingId(item.id)"
+                        @click="editItem(item)">
+                        <i class="fa-solid fa-pen-to-square fa-2x fa-fw"></i>
+                    </div>
+                    <div class="operation__icon" 
+                        v-if="isEditingAddingId(item.id)"
+                        @click="cancelEditAdd()">
+                        <i class="fa-solid fa-xmark fa-2x fa-fw"></i>
+                    </div>
+                    <div class="operation__icon" 
+                        v-if="isAddingId(item.id)"
+                        @click="submitAdd">
+                        <i class="fa-solid fa-check fa-2x fa-fw"></i>
+                    </div>
+                    <div class="operation__icon" 
+                        v-if="isEditingId(item.id)"
+                        @click="submitEdit">
+                        <i class="fa-solid fa-check fa-2x fa-fw"></i>
+                    </div>
+                </div>
 
-    <EasyDataTable
-        :headers="headers"
-        :items="items"
-        :loading="loading"
-        show-index
-        alternating
-        border-cell
-        buttons-pagination
-    >
-        <template #loading>
-            <img src="@/assets/ivv-logo.png" alt="" style="float: right;">
-        </template>
-        
-        <template #item-operation="item">
-            <div class="operation-wrapper">
-                <div v-if="!isEditingAddingId(item.id)"
-                    @click="editItem(item)">
-                    <i class="fa-solid fa-pen-to-square"></i>
+            </template>
+            
+            <template v-for="(headerItem, index) in table.headers"
+                :key="index"
+                #[makeItemSlotName(headerItem.value)]="item">
+                <div class="item__wrapper"
+                    @dblclick="editItem(item)">
+                    <input class="form-control" type="text"
+                        v-if="isEditingAddingId(item.id)"
+                        v-model="editingItem[headerItem.value]"
+                        @keydown.enter="submit()"
+                        @keydown.esc="cancelEditAdd()"
+                    />
+                    <p class="" v-else>{{ item[headerItem.value] }}</p>       
                 </div>
-                <div @click="deleteItem(item.id)">
-                    <i class="fa fa-trash" aria-hidden="true"></i>
-                </div>
-                <div v-if="isEditingAddingId(item.id)"
-                    @click="cancelEditAdd()">
-                    <i class="fa-solid fa-xmark"></i>
-                </div>
-                <div v-if="isAddingId(item.id)"
-                    click="submitAdd">
-                    <i class="fa-solid fa-check"></i>
-                </div>
-                <div v-if="isEditingId(item.id)"
-                    @click="submitEdit">
-                    <i class="fa-solid fa-check"></i>
-                </div>
-            </div>
+            </template>
 
-        </template>
-         
-        <template v-for="(headerItem, index) in table.headers"
-            :key="index"
-            #[makeSlotName(headerItem.value)]="item">
-            <input class="form-control" type="text"
-                v-if="isEditingAddingId(item.id)"
-                v-model="editingItem[headerItem.value]"
-                @keydown.enter="submit()"
-                @keydown.esc="cancelEditAdd()"
-            />
-            <p v-else
-             @dblclick="editItem(item)">{{ item[headerItem.value] }}</p>         
-        </template>
+            <template v-for="(headerItem, index) in headers"
+                :key="index"
+                #[makeHeaderSlotName(headerItem.value)]>
+                <div class="header__wrapper">
+                    <h3>{{ headerItem.value }}</h3>
+                </div>
+            </template>
 
-    </EasyDataTable>    
-
-    <div>
-        <button @click="addItem" class="btn btn-secondary">Add row</button>
-        <button @click="discardChanges" class="btn btn-danger">Discard changes</button>
-        <button @click="confirmChanges" class="btn btn-primary">Confirm changes</button>
-        <div v-if="isAdding || isEditing">
-            <div @click="deleteItem(editingItem.id)">
-                <i class="fa fa-trash" aria-hidden="true"></i>
-            </div>
-            <div @click="cancelEditAdd()">
-                <i class="fa-solid fa-xmark"></i>
-            </div>
-            <div v-if="isAddingId(editingItem.id)"
-                click="submitAdd">
-                <i class="fa-solid fa-check"></i>
-            </div>
-            <div v-if="isEditingId(editingItem.id)"
-                @click="submitEdit">
-                <i class="fa-solid fa-check"></i>
-            </div>
-        </div>      
+        </EasyDataTable>    
     </div>
+    <div class="control-panel">  
+        <div class="control-panel__buttons-wrapper">
+            <button @click="addItem" class="control-panel__button btn btn-secondary">Add row</button>
+            <button @click="discardChanges" class="control-panel__button btn btn-danger">Discard changes</button>
+            <button @click="confirmChanges" class="control-panel__button btn btn-primary">Confirm changes</button>
+        </div>   
+        <div class="operation__wrapper" 
+            v-if="isAdding || isEditing">
+            <div class="operation__icon"  
+                @click="deleteItem(editingItem.id)">
+                <i class="fa fa-trash fa-3x fa-fw" aria-hidden="true"></i>
+            </div>
+            <div class="operation__icon"  
+                @click="cancelEditAdd()">
+                <i class="fa-solid fa-xmark fa-3x fa-fw"></i>
+            </div>
+            <div class="operation__icon"  
+                v-if="isAddingId(editingItem.id)"
+                @click="submitAdd()">
+                <i class="fa-solid fa-check fa-3x fa-fw"></i>
+            </div>
+            <div class="operation__icon" 
+                v-if="isEditingId(editingItem.id)"
+                @click="submitEdit">
+                <i class="fa-solid fa-check fa-3x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+    
 
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+    @import '../assets/styles/style.scss';
+
+    .operation {
+
+        &__wrapper {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            height: 100%;
+        }
+
+        &__icon {
+            margin: 10px;
+        }
+    }
+
+    .item {
+
+        &__wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    .header {
+        
+        & h3 {
+            font-weight: bold;
+            font-size: 16px;
+            color: #{$indigo}
+        }
+    }
+
+    .control-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 67px;
+        z-index: 1;
+        background: white;
+        border-top: 3px solid #{$primary};
+        padding: 10px;
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: space-between;
+
+        &__buttons-wrapper {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            height: 100%;
+        }
+
+        &__button {
+            margin: 5px 30px;
+            width: 150px
+        }
+    }
+
+    .table {
+        position: relative;
+        padding-bottom: 70px;
+    }
+
 </style>

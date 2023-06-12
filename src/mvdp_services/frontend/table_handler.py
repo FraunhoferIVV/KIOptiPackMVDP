@@ -28,7 +28,7 @@ class TableHandler:
                                 sorted(list(data_frame.columns.values)[2:])]
 
         # quickfix for table with different columns
-        data_frame = data_frame.fillna('no_values')
+        data_frame = data_frame.fillna('no_value')
 
         if len(data_frame.columns) > 0:
             response = Table(headers=[{'text': str(c), 'value': str(c), 'sortable': True} for c in data_frame.columns],
