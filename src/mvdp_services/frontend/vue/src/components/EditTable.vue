@@ -47,7 +47,7 @@ export default defineComponent({
             changedItems = [] 
             //
             headers.value = table.headers.map(header => Object.assign({}, header)) // make a copy of table headers
-            headers.value.push({text: "Operation", value: "operation"}) // operation overhead for headers
+            headers.value.unshift({text: "Operation", value: "operation"}) // operation overhead for headers
             // create id for each table item
             currentId.value = 0
             for (const item of table.items) {
@@ -265,35 +265,25 @@ export default defineComponent({
         
         <template #item-operation="item">
             <div class="operation-wrapper">
-                <img
-                    src="@/assets/delete.png"
-                    class="operation-icon"
-                    @click="deleteItem(item.id)"
-                />
-                <img 
-                    v-if="!isEditingAddingId(item.id)"
-                    src="@/assets/edit.png"
-                    class="operation-icon"
-                    @click="editItem(item)"
-                />
-                <img
-                    v-if="isEditingAddingId(item.id)"
-                    src="@/assets/cancel.png"
-                    class="operation-icon"
-                    @click="cancelEditAdd"
-                />
-                <img
-                    v-if="isEditingId(item.id)"
-                    src="@/assets/ok.png"
-                    class="operation-icon"
-                    @click="submitEdit"
-                />
-                <img             
-                    v-if="isAddingId(item.id)"
-                    src="@/assets/ok.png"
-                    class="operation-icon"
-                    @click="submitAdd"
-                />
+                <div v-if="!isEditingAddingId(item.id)"
+                    @click="editItem(item)">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div @click="deleteItem(item.id)">
+                    <i class="fa fa-trash" aria-hidden="true"></i>
+                </div>
+                <div v-if="isEditingAddingId(item.id)"
+                    @click="cancelEditAdd()">
+                    <i class="fa-solid fa-xmark"></i>
+                </div>
+                <div v-if="isAddingId(item.id)"
+                    click="submitAdd">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div v-if="isEditingId(item.id)"
+                    @click="submitEdit">
+                    <i class="fa-solid fa-check"></i>
+                </div>
             </div>
 
         </template>
