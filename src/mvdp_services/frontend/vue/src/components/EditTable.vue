@@ -246,6 +246,8 @@ export default defineComponent({
 
 
 <template>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <EasyDataTable
         :headers="headers"
         :items="items"
@@ -313,28 +315,20 @@ export default defineComponent({
         <button @click="discardChanges" class="btn btn-danger">Discard changes</button>
         <button @click="confirmChanges" class="btn btn-primary">Confirm changes</button>
         <div v-if="isAdding || isEditing">
-            <img
-                src="@/assets/delete.png"
-                class="operation-icon"
-                @click="deleteItem(editingItem)"
-            />
-            <img
-                src="@/assets/cancel.png"
-                class="operation-icon"
-                @click="cancelEditAdd"
-            />
-            <img
-                v-if="isEditingId(editingItem.id)"
-                src="@/assets/ok.png"
-                class="operation-icon"
-                @click="submitEdit"
-            />
-            <img             
-                v-if="isAddingId(editingItem.id)"
-                src="@/assets/ok.png"
-                class="operation-icon"
-                @click="submitAdd"
-            />
+            <div @click="deleteItem(editingItem)">
+                <i class="fa fa-trash" aria-hidden="true"></i>
+            </div>
+            <div @click="cancelEditAdd()">
+                <i class="fa-solid fa-xmark"></i>
+            </div>
+            <div v-if="isAddingId(editingItem.id)"
+                click="submitAdd">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div v-if="isEditingId(editingItem.id)"
+                @click="submitEdit">
+                <i class="fa-solid fa-check"></i>
+            </div>
         </div>      
     </div>
 
