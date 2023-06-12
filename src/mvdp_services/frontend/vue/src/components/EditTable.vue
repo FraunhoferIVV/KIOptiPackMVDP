@@ -60,8 +60,10 @@ export default defineComponent({
             loading.value = false
         }
 
-        const deleteItem = (row : Item) => {
-            items.value = items.value.filter((item) => item.id !== row.id)
+        const deleteItem = (itemId : number) => {
+            let row = items.value.find((item) => item.id === itemId) as Item
+            items.value = items.value.filter((item) => item.id !== itemId)
+            console.log(row)
             saveChange(row, "DELETE")
             cancelEditAdd() // enable editingItem to be deleted
         }
@@ -266,7 +268,7 @@ export default defineComponent({
                 <img
                     src="@/assets/delete.png"
                     class="operation-icon"
-                    @click="deleteItem(item)"
+                    @click="deleteItem(item.id)"
                 />
                 <img 
                     v-if="!isEditingAddingId(item.id)"
@@ -315,7 +317,7 @@ export default defineComponent({
         <button @click="discardChanges" class="btn btn-danger">Discard changes</button>
         <button @click="confirmChanges" class="btn btn-primary">Confirm changes</button>
         <div v-if="isAdding || isEditing">
-            <div @click="deleteItem(editingItem)">
+            <div @click="deleteItem(editingItem.id)">
                 <i class="fa fa-trash" aria-hidden="true"></i>
             </div>
             <div @click="cancelEditAdd()">
