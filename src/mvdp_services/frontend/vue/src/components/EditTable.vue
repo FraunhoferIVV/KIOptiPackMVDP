@@ -294,7 +294,8 @@ export default defineComponent({
             <input class="form-control" type="text"
                 v-if="isEditingAddingId(item.id)"
                 v-model="editingItem[headerItem.value]"
-                @keydown.enter="submit"
+                @keydown.enter="submit()"
+                @keydown.esc="cancelEditAdd()"
             />
             <p v-else
              @dblclick="editItem(item)">{{ item[headerItem.value] }}</p>         
