@@ -16,10 +16,6 @@ class FrontendModuleEnv:
         return int(os.environ.get(MVDP_FRONTEND_PORT, "5478"))
 
     @property
-    def frontend_title(self) -> str:
-        return os.environ.get(MVDP_FRONTEND_TITLE, "Minimum Viable Dataspace Participant")
-
-    @property
     def mongodb_collection(self) -> str:
         return os.environ.get(MVDP_MONGODB_COLLECTION, "thing")
 

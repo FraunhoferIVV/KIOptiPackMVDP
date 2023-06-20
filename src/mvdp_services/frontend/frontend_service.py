@@ -24,8 +24,7 @@ from starlette.responses import JSONResponse
 
 from mvdp.msg import HealthCheckRequest, HealthCheckReply, ArbitraryJSONMessage
 from mvdp.uvicorn_server import UvicornAsyncServer
-from mvdp_services.frontend.api_response_msg import HealthResponse, PossibleFileTypes, PossibleCSVDelimiters, \
-    FrontendConfiguration
+from mvdp_services.frontend.api_response_msg import HealthResponse, PossibleFileTypes, PossibleCSVDelimiters
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.table_handler import TableHandler
 
@@ -57,7 +56,6 @@ class FrontendService(FastIoTService):
         )
 
         self.app.get("/api/health_check")(self._health_check)
-        self.app.get("/api/frontend_config")(self._send_config)
         self.app.get("/api/config/{config_variable}")(self._provide_config_variable)
         self.app.post("/api/upload_data")(self._handle_upload)
         self.app.put("/api/change_data")(self._handle_changes)
@@ -105,11 +103,6 @@ class FrontendService(FastIoTService):
                                   edc=edc_health,
                                   overall_status=self.broker_connection.is_connected and edc_health)
         return response
-
-    @staticmethod
-    async def _send_config() -> FrontendConfiguration:
-        """ Returns some configurations to set up the frontend """
-        return FrontendConfiguration(title=env_frontend.frontend_title)
 
     async def _provide_config_variable(self, config_variable):
         """ Returns a certain config variable to set up the frontend """

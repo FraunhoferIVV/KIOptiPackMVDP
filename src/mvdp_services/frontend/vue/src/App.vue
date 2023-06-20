@@ -57,10 +57,10 @@ export default defineComponent({
     async set_title() {
       axios({
         method: 'get',
-        url: constants.restBaseUrl + 'api/frontend_config',
+        url: constants.restBaseUrl + 'api/config/frontend_title',
         timeout: 2000
       }).then((res) => {
-        this.title = res.data.title
+        this.title = res.data
         window.setTimeout(this.set_title, 5*60*1000)
       }, (error) => {
         console.log('Can not establish connection to server to update title')
