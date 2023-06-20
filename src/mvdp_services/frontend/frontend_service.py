@@ -58,8 +58,10 @@ class FrontendService(FastIoTService):
 
         self.app.get("/api/health_check")(self._health_check)
         self.app.get("/api/frontend_config")(self._send_config)
+        self.app.get("/api/config/{config_variable}")(self._provide_config_variable)
         self.app.post("/api/upload_data")(self._handle_upload)
         self.app.put("/api/change_data")(self._handle_changes)
+
 
         table_editor = TableHandler()
         self.app.get("/api/table/data")(table_editor.return_table)
@@ -108,6 +110,10 @@ class FrontendService(FastIoTService):
     async def _send_config() -> FrontendConfiguration:
         """ Returns some configurations to set up the frontend """
         return FrontendConfiguration(title=env_frontend.frontend_title)
+
+    async def _provide_config_variable(self, config_variable):
+        """ Returns a certain config variable to set up the frontend """
+        return self.config[config_variable]
 
     async def _handle_upload(self, data_file: bytes = File(),
                              file_type: PossibleFileTypes = Form(...),
