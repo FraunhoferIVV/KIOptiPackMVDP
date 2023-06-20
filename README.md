@@ -9,6 +9,10 @@ website at https://ki-hub-kunststoffverpackungen.de/ki-opti-pack/
 Scope of this repository to provide minium working examples to upload and share data in the common data space. 
 The core connection between participants will be using the [Eclipse Data Space Connector](https://github.com/eclipse-edc).
 
+<img height="84" src="https://ki-hub-kunststoffverpackungen.de/typo3conf/ext/gi_base/Resources/Themes/Dgt/Images/bundesministerium-logo_klein.jpg">
+<img height="84" src="https://www.fona.de/cms/img/BMBF_FONA_Logo_de.svg">
+<img height="84" src="https://ki-hub-kunststoffverpackungen.de/typo3conf/ext/gi_base/Resources/Themes/KiHubKunststoff/Images/KI-Logo-web.png">
+
 ## License
 
 Copyright 2022 Fraunhofer IVV, Dresden and contributors
