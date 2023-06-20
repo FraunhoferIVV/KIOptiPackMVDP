@@ -82,10 +82,12 @@ export default defineComponent({
         EditTable
     },
     mounted() {
-        this.loadMaterialOptions()
+        this.loadUploadConfig()
+        // this.loadMaterialOptions()
     },
     data() {           
         return {
+            uploadForbidden: true,
             dataFile: {} as File,
             uploadMessage: {
                 content: 'Upload file not chosen!',
@@ -174,10 +176,7 @@ export default defineComponent({
                             console.log(error)
                             if (error.code == 'ERR_NETWORK') {
                                 this.uploadMessage.content = 'Network error!\n\n' +
-                                    'Possible reasons:\n' +
-                                    '1. No server connection\n' +
-                                    '2. file changed (refresh site)\n' +
-                                    '3. xlsx-file not valid (create file from your office software)'                  
+                                    'PosfileConfiguration. xlsx-file not valid (create file from your office software)'                  
                                 this.uploadMessage.type = 'error';
                             } else if ('response' in error) {
                                 this.uploadMessage.content = error.response.data.detail;
@@ -225,10 +224,28 @@ export default defineComponent({
             }
             return true;
         },
+        loadUploadConfig: async function() {
+            await axios({
+                method: 'get',
+                url: constants.restBaseUrl + 'api/config/upload_forbidden',
+                timeout: 3000
+            }).then((res) => {
+                this.uploadForbidden = res.data;
+                console.log('Upload config loaded');
+                if (this.uploadForbidden) {
+                    this.uploadMessage.content = 'Uploading forbidden by configuration!'
+                    this.uploadMessage.type = 'warning'
+                }  
+            }, (error) => {
+                console.log('Can not establish connection to server to get upload config')
+                console.log(error)
+            })
+        },
         loadMaterialOptions() {
             
-            const getUrl = constants.restBaseUrl + 'api/get_some_data';
+            const getUrl = constants.restBaseUrl + 'api/material_options';
             // await not needed: client doesn't have to wait for server response with current options
+            /*
             axios.get(getUrl).
                 then((res) => {
                     console.log(res)
@@ -238,7 +255,7 @@ export default defineComponent({
                     this.uploadMessage.content = 'Can not load Material_ID hints!'
                     this.uploadMessage.type = 'warning'
                 })
-            
+            */
         }
     }
 })
