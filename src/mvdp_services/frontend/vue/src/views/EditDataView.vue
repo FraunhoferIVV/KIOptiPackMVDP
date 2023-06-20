@@ -16,11 +16,13 @@ export default defineComponent({
   },
   mounted() {
     this.fetchTable()
+    this.loadEditConfig()
   },
   data() {
     return {
+      tableReadonly: true,
       editMessage: {
-        content: 'table loaded',
+        content: '',
         type: 'info' as MessageType
       },
       table: {headers: [] as Header[], items: [] as Item[]},
@@ -68,6 +70,23 @@ export default defineComponent({
         setTimeout(() => {
           this.fetchTable() // update table with current changes for child components
         }, 500)
+      },
+      loadEditConfig: async function () {
+        await axios({
+              method: 'get',
+              url: constants.restBaseUrl + 'api/config/table_readonly',
+              timeout: 3000
+          }).then((res) => {
+              this.tableReadonly = res.data;
+              console.log('Upload config loaded');
+              if (this.tableReadonly) {
+                  this.editMessage.content = 'The table is read only!'
+                  this.editMessage.type = 'warning'
+              }  
+          }, (error) => {
+              console.log('Can not establish connection to server to get upload config')
+              console.log(error)
+          })
       }
   },
 })
@@ -77,6 +96,7 @@ export default defineComponent({
     <EditTable 
       ref="table"
       :table="table"
+      :tableReadonly="tableReadonly"
       @changeTable="handleChanges"
     />
 </template>

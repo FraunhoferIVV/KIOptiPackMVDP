@@ -15,7 +15,11 @@ export default defineComponent({
         table: {
             required: true,
             type: Object as PropType<TableType>
-        }
+        },
+        tableReadonly: {
+            required: true,
+            type: Boolean
+        }        
     },
     emits: ['changeTable'],
     components: {
@@ -270,7 +274,7 @@ export default defineComponent({
                 <img src="@/assets/ivv-logo.png" alt="" style="float: right;">
             </template>
             
-            <template #item-operation="item">
+            <template #item-operation="item" v-if="!tableReadonly">
                 <div class="operation__wrapper">
                     <div class="operation__icon" 
                         @click="deleteItem(item.id)">
@@ -325,12 +329,13 @@ export default defineComponent({
 
         </EasyDataTable>    
     </div>
-    <div class="control-panel">  
+    <div class="control-panel" v-if="!tableReadonly">  
         <div class="control-panel__buttons-wrapper">
             <button @click="addItem" class="control-panel__button btn btn-secondary">Add row</button>
             <button @click="discardChanges" class="control-panel__button btn btn-danger">Discard changes</button>
             <button @click="confirmChanges" class="control-panel__button btn btn-primary">Confirm changes</button>
-        </div>   
+        </div> 
+
         <div class="operation__wrapper" 
             v-if="isAdding || isEditing">
             <div class="operation__icon"  

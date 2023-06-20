@@ -1,2 +1,2 @@
-upload_forbidden: true
-table_readonly: true
+upload_forbidden: false
+table_readonly: false
