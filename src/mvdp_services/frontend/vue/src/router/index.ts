@@ -13,8 +13,8 @@ const router = createRouter({
       component: HomeView
     },
     {
-      path: '/upload_file',
-      name: 'upload_file',
+      path: '/upload_data',
+      name: 'upload_data',
       // route level code-splitting
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
