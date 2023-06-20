@@ -13,6 +13,10 @@ from fastapi import File, Form, FastAPI, Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_login import LoginManager
+from fastapi_login.exceptions import InvalidCredentialsException
 from fastiot.core import FastIoTService, ReplySubject
 from fastiot.core.time import get_time_now
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
@@ -34,6 +38,10 @@ class FrontendService(FastIoTService):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        # create login manager
+        self.manager = LoginManager(os.urandom(24).hex(), token_url='auth/token')
+
+        # init fastapi app
         self.app = FastAPI()
         self._register_routes()
         self.server = UvicornAsyncServer(self.app, port=env_frontend.port)
@@ -42,9 +50,8 @@ class FrontendService(FastIoTService):
         database = get_mongodb_client_from_env().get_database(env_mongodb.name)
         self.mongodb_col = database.get_collection(env_frontend.mongodb_collection)
 
+        # read frontend service config file
         self.config = read_config(self)
-
-
 
     def _register_routes(self):
         self.app.add_middleware(
@@ -55,11 +62,13 @@ class FrontendService(FastIoTService):
             allow_headers=["*"],
         )
 
+        self.manager.user_loader()(self._load_user)
+
+        self.app.get("/api/auth/token")(self._login)
         self.app.get("/api/health_check")(self._health_check)
         self.app.get("/api/config/{config_variable}")(self._provide_config_variable)
         self.app.post("/api/upload_data")(self._handle_upload)
         self.app.put("/api/change_data")(self._handle_changes)
-
 
         table_editor = TableHandler()
         self.app.get("/api/table/data")(table_editor.return_table)
@@ -107,6 +116,26 @@ class FrontendService(FastIoTService):
     async def _provide_config_variable(self, config_variable):
         """ Returns a certain config variable to set up the frontend """
         return self.config[config_variable]
+
+    def _load_user(self, email: str):  # could also be an asynchronous function
+        user_db = self.config.users
+        user = user_db.get(email)
+        return user
+
+    def _login(self, data: OAuth2PasswordRequestForm = Depends()):
+        email = data.username
+        password = data.password
+
+        user = self._load_user(email)
+        if not user:
+            raise InvalidCredentialsException
+        elif password != user['password']:
+            raise InvalidCredentialsException
+
+        access_token = self.manager.create_access_token(
+            data=dict(sub=email)
+        )
+        return {'access_token': access_token, 'token_type': 'bearer'}
 
     async def _handle_upload(self, data_file: bytes = File(),
                              file_type: PossibleFileTypes = Form(...),

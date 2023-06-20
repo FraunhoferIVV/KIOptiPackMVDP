@@ -1,3 +1,6 @@
 frontend_title: "Minimum Viable Dataspace Participant"
 upload_forbidden: false
 table_readonly: false
+users:
+  hello@:
+    password: ttt
