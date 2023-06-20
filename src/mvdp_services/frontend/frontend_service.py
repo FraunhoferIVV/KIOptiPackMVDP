@@ -33,13 +33,14 @@ from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.table_handler import TableHandler
 
 
+# create login manager
+manager = LoginManager(os.urandom(24).hex(), token_url='auth/token')
+
+
 class FrontendService(FastIoTService):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        # create login manager
-        self.manager = LoginManager(os.urandom(24).hex(), token_url='auth/token')
 
         # init fastapi app
         self.app = FastAPI()
@@ -62,7 +63,7 @@ class FrontendService(FastIoTService):
             allow_headers=["*"],
         )
 
-        self.manager.user_loader()(self._load_user)
+        manager.user_loader()(self._load_user)
 
         self.app.get("/api/auth/token")(self._login)
         self.app.get("/api/health_check")(self._health_check)
@@ -83,6 +84,8 @@ class FrontendService(FastIoTService):
         await self.server.up()
 
     async def _stop(self):
+        """ Methods to call on module shutdown """
+        """ Methods to call on module shutdown """
         """ Methods to call on module shutdown """
         await self.server.down()
 
@@ -113,9 +116,10 @@ class FrontendService(FastIoTService):
                                   overall_status=self.broker_connection.is_connected and edc_health)
         return response
 
-    async def _provide_config_variable(self, config_variable):
+    async def _provide_config_variable(self,
+                                       config_variable: str):
         """ Returns a certain config variable to set up the frontend """
-        return self.config[config_variable]
+        return self.config.get(config_variable)
 
     def _load_user(self, email: str):  # could also be an asynchronous function
         user_db = self.config.users
@@ -132,12 +136,14 @@ class FrontendService(FastIoTService):
         elif password != user['password']:
             raise InvalidCredentialsException
 
-        access_token = self.manager.create_access_token(
+        access_token = manager.create_access_token(
             data=dict(sub=email)
         )
         return {'access_token': access_token, 'token_type': 'bearer'}
 
-    async def _handle_upload(self, data_file: bytes = File(),
+    async def _handle_upload(self,
+                             user=Depends(manager),
+                             data_file: bytes = File(),
                              file_type: PossibleFileTypes = Form(...),
                              data_delimiter: Optional[PossibleCSVDelimiters] = Form(None),
                              decimal_delimiter: Optional[PossibleCSVDelimiters] = Form(None),
@@ -219,7 +225,9 @@ class FrontendService(FastIoTService):
         await self.broker_connection.publish(subject=ArbitraryJSONMessage.get_subject(),
                                              msg=message)
 
-    async def _handle_changes(self, changed_items: str = Form(...)):
+    async def _handle_changes(self,
+                              user=Depends(manager),
+                              changed_items: str = Form(...)):
         if self.config['table_readonly']:
             raise HTTPException(status_code=500, detail='The data table is read only!')
 
