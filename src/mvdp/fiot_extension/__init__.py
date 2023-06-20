@@ -1,1 +1,2 @@
 from mvdp.fiot_extension.services import EclipseDataSpaceConnector
+from mvdp.fiot_extension.cmd_create import mvdp_deployment
