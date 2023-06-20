@@ -15,7 +15,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_login import LoginManager
 from fastapi_login.exceptions import InvalidCredentialsException
 from fastiot.core import FastIoTService, ReplySubject
 from fastiot.core.time import get_time_now
@@ -31,10 +30,7 @@ from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.frontend.api_response_msg import HealthResponse, PossibleFileTypes, PossibleCSVDelimiters
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.table_handler import TableHandler
-
-
-# create login manager
-manager = LoginManager(os.urandom(24).hex(), token_url='auth/token')
+from mvdp_services.frontend.manager import manager
 
 
 class FrontendService(FastIoTService):
