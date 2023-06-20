@@ -206,7 +206,7 @@ class FrontendService(FastIoTService):
                     timestamp = row_timestamp
 
                 # create thing
-                thing = Thing(machine=env_frontend.frontend_title,
+                thing = Thing(machine=self.config['frontend_title'],
                               name=attr, measurement_id=measurement_id,
                               value=row[attr], timestamp=timestamp)
 
