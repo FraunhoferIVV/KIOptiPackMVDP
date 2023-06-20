@@ -17,8 +17,8 @@ from fastiot.core import FastIoTService, ReplySubject
 from fastiot.core.time import get_time_now
 from fastiot.db.mongodb_helper_fn import get_mongodb_client_from_env
 from fastiot.env import env_mongodb
-from fastiot.msg.custom_db_data_type_conversion import to_mongo_data
 from fastiot.msg.thing import Thing
+from fastiot.util.config_helper import read_config
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
@@ -42,6 +42,10 @@ class FrontendService(FastIoTService):
         # init database for direct interaction (for example delete operation)
         database = get_mongodb_client_from_env().get_database(env_mongodb.name)
         self.mongodb_col = database.get_collection(env_frontend.mongodb_collection)
+
+        self.config = read_config(self)
+
+
 
     def _register_routes(self):
         self.app.add_middleware(
@@ -114,6 +118,9 @@ class FrontendService(FastIoTService):
         Endpoint to upload files formed as table (Excel .xlsx-files or comma separated values .csv) or plain JSON.
         If CSV is used decimal and data delimiter must be set.
         """
+        if self.config['upload_forbidden']:
+            raise HTTPException(status_code=500, detail='Uploading forbidden by configuration!')
+
         data_frame = await self._parse_file(data_file=data_file, file_type=file_type,
                                             data_delimiter=data_delimiter, decimal_delimiter=decimal_delimiter, )
         if data_frame is not None:
@@ -185,6 +192,9 @@ class FrontendService(FastIoTService):
                                              msg=message)
 
     async def _handle_changes(self, changed_items: str = Form(...)):
+        if self.config['table_readonly']:
+            raise HTTPException(status_code=500, detail='The data table is read only!')
+
         changes = json.loads(changed_items)
         self._logger.debug(changes)
         for row in changes:
