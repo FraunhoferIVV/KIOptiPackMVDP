@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import sys
 
 import yaml
 from fastiot.cli.constants import DEPLOYMENTS_CONFIG_DIR, DEPLOYMENTS_CONFIG_FILE, FASTIOT_DOCKER_REGISTRY
@@ -9,7 +10,7 @@ from fastiot.cli.model.deployment import ServiceConfig, DeploymentConfig, Infras
 from fastiot.cli.model.project import ProjectContext
 from fastiot.cli.typer_app import create_cmd
 
-from mvdp.config_model import DataProviderConfiguration, AssetConfig, AssetServingTypeEnum
+from mvdp.config_model import DataProviderConfiguration, AssetConfig, AssetServingTypeEnum, FrontendConfiguration
 
 try:
     import typer
@@ -18,6 +19,10 @@ except ImportError:
         logging.error("Could not import Typer. To use the CLI you need to install `fastiot[dev]`.")
     sys.exit(1)
 
+try:
+    from rich import print  # Should usually be installed because of typer[all]
+except ImportError:
+    pass  # Just use built-in print command
 
 @create_cmd.command()
 def mvdp_deployment(deployment_name: str = typer.Argument(None, help="The deployment name to generate"),
@@ -28,7 +33,7 @@ def mvdp_deployment(deployment_name: str = typer.Argument(None, help="The deploy
     Create a simple deployment configuration including Eclipse Dataspace Connector and/or some backend services to
     get started. You have to select at least one out of edc and backend.
     """
-    logging.info("Creating deployment %s", deployment_name)
+    print(f"Creating deployment {deployment_name}")
 
     context = ProjectContext.default
 
@@ -37,7 +42,7 @@ def mvdp_deployment(deployment_name: str = typer.Argument(None, help="The deploy
         if force:
             shutil.rmtree(deployment_dir, ignore_errors=False, onerror=None)
         else:
-            logging.error("Deployment already exists. To overwrite use the option `--force`.")
+            print("[bold red]Deployment already exists.[/bold red] To overwrite use the option `--force`.")
             raise typer.Exit(10)
 
     os.makedirs(os.path.join(deployment_dir, 'config_dir'))
@@ -48,19 +53,25 @@ def mvdp_deployment(deployment_name: str = typer.Argument(None, help="The deploy
     backend = typer.prompt("Do you want the backend services to be included?",
                            type=bool, default="Yes")
     if backend:
-        frontend_title = typer.prompt("How do you want your frontend to be titled?")
-
-        base_image = 'mvdp/' if context.project_namespace != 'mvdp' else ''
-        docker_registry = os.environ.get(FASTIOT_DOCKER_REGISTRY, "")
-
-        services['frontend'] = ServiceConfig(image=f"{base_image}frontend", docker_registry=docker_registry,
-                                             environment={'MVDP_FRONTEND_TITLE': frontend_title})
-
-        services['data_provider'] = ServiceConfig(image=f"{base_image}data_provider", docker_registry=docker_registry)
+        if context.project_namespace == 'mvdp':  # No need to adjust anything, just use the local image for fiot config
+            services['frontend'] = None
+            services['data_provider'] = None
+        else:
+            docker_registry = os.environ.get(FASTIOT_DOCKER_REGISTRY, "")
+            services['frontend'] = ServiceConfig(image="mvdp/frontend", docker_registry=docker_registry)
+            services['data_provider'] = ServiceConfig(image="mvdp/data_provider", docker_registry=docker_registry)
 
         infrastructure_services = {i: InfrastructureServiceConfig() for i in ['nats', 'mongodb']}
-        _create_object_storage_config(deployment_dir=deployment_dir)
-        _create_data_provider_config(deployment_dir=deployment_dir)
+
+        serving_type = typer.prompt(
+            "Will you be serving »things« (like serving machine data or uploaded tables over the "
+            "ui) or »json« Documents?",
+            type=AssetServingTypeEnum, default=AssetServingTypeEnum.thing, show_choices=True)
+
+        _create_frontend_config(deployment_dir=deployment_dir, serving_type=serving_type,
+                                deployment_name=deployment_name)
+        _create_object_storage_config(deployment_dir=deployment_dir, serving_type=serving_type)
+        _create_data_provider_config(deployment_dir=deployment_dir, serving_type=serving_type)
 
     edc = typer.prompt("Do you want the Eclipse Data Space connector to be included?",
                        type=bool, default="No")
@@ -73,11 +84,28 @@ def mvdp_deployment(deployment_name: str = typer.Argument(None, help="The deploy
     with open(os.path.join(deployment_dir, DEPLOYMENTS_CONFIG_FILE), "w") as file:
         yaml.dump(config.dict(), file)
 
-    logging.info("Successfully created deployment %s", deployment_name)
-    logging.info("To actually start or deploy your deployment you need to run `fiot config` now!")
+    print(f"[bold green]Successfully created deployment {deployment_name}[/bold green]")
+    print("To actually start or deploy your deployment you need to run `fiot config` now!")
 
 
-def _create_object_storage_config(deployment_dir: str):
+def _create_frontend_config(deployment_dir: str, serving_type: AssetServingTypeEnum, deployment_name: str):
+    """ Settings for frontend """
+    frontend_title = typer.prompt("How do you want your frontend to be titled?", default=deployment_name, type=str)
+    if serving_type == AssetServingTypeEnum.thing:
+        upload = typer.prompt("Do you want to enable table or json uploads", default="Yes", type=bool)
+        edit_table = typer.prompt("Do you want your table to be editable?", default="Yes", type=bool)
+    else:  # Editing json is not possible, thus upload needs to be on
+        upload = True
+        edit_table = False
+    config = FrontendConfiguration(frontend_title=frontend_title,
+                                   upload_forbidden=not upload,
+                                   table_readonly=not edit_table)
+
+    with open(os.path.join(deployment_dir, 'config_dir', 'FrontendService.yaml'), "w") as file:
+        yaml.dump(config.dict(), file)
+
+
+def _create_object_storage_config(deployment_dir: str, serving_type: AssetServingTypeEnum):
     """ Settings for ObjectStorage """
     context = ProjectContext.default
 
@@ -91,11 +119,23 @@ def _create_object_storage_config(deployment_dir: str):
         search_index['thing'].append('timestamp')
     config['search_index'] = search_index
 
-    subscriptions = {'thing.>': {'collection': 'thing',
-                                 'reply_subject_name': 'objects',
-                                 'enable_overwriting': True,
-                                 'identify_object_with': ["measurement_id", "name"]
-                                 }}
+    if serving_type == AssetServingTypeEnum.thing:
+        subscriptions = {'thing.>': {'collection': serving_type.value,
+                                     'reply_subject_name': 'objects',
+                                     'enable_overwriting': True,
+                                     'identify_object_with': ["measurement_id", "name"]
+                                     }}
+    elif serving_type == AssetServingTypeEnum.json:
+        subscriptions = {'arbitrary_j_s_o_n_message': {'collection': serving_type.value,
+                                                       'reply_subject_name': 'json_objects',
+                                                       'enable_overwriting': True,
+                                                       'identify_object_with': ["json_data.Material_ID"]
+                                                       }}
+    else:
+        print(f"[bold red]:warning: Warning[/bold red]: Object Storage configuration not yet implemented for serving "
+              f"type {serving_type.value}.\nNot creating a configuration for object storage!")
+        return
+
     if store_timeseries:
         subscriptions['thing.>']['identify_object_with'].append('_timestamp')
     config['subscriptions'] = subscriptions
@@ -104,15 +144,12 @@ def _create_object_storage_config(deployment_dir: str):
         yaml.dump(config, file)
 
 
-def _create_data_provider_config(deployment_dir: str):
+def _create_data_provider_config(deployment_dir: str, serving_type: AssetServingTypeEnum):
     """ Setup for frontend """
 
-    serving_type = typer.prompt("Will you be serving »things« (like serving machine data or uploaded tables over the "
-                                "ui) or »json« Documents?",
-                                type=AssetServingTypeEnum, default=AssetServingTypeEnum.thing, show_choices=True)
     asset_full = AssetConfig(description="Complete data", policy="default", constraints={},
                              asset_serving_type=serving_type.value)
-    config = DataProviderConfiguration(collection='thing',
+    config = DataProviderConfiguration(collection=serving_type.value,
                                        assets={"Full": asset_full},
                                        search_index=[])
 
@@ -122,3 +159,4 @@ def _create_data_provider_config(deployment_dir: str):
 
 def _create_edc_setup():
     """ Create the files needed for the Eclipse Dataspace Connector to start"""
+    print("[bold red]:warning: Warning[/bold red]: Setting up the EDC has not been implemented yet.")
