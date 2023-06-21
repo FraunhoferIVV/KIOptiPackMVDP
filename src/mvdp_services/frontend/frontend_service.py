@@ -25,6 +25,7 @@ from fastiot.util.config_helper import read_config
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
+from mvdp.config_model import FrontendConfiguration
 from mvdp.msg import HealthCheckRequest, HealthCheckReply, ArbitraryJSONMessage
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.frontend.api_response_msg import HealthResponse, PossibleFileTypes, PossibleCSVDelimiters
@@ -48,7 +49,7 @@ class FrontendService(FastIoTService):
         self.mongodb_col = database.get_collection(env_frontend.mongodb_collection)
 
         # read frontend service config file
-        self.config = read_config(self)
+        self.config = FrontendConfiguration.from_service(self)
 
     def _register_routes(self):
         self.app.add_middleware(
@@ -115,7 +116,7 @@ class FrontendService(FastIoTService):
     async def _provide_config_variable(self,
                                        config_variable: str):
         """ Returns a certain config variable to set up the frontend """
-        return self.config.get(config_variable)
+        return self.config.__getattribute__(config_variable)
 
     def _load_user(self, email: str):  # could also be an asynchronous function
         user_db = self.config.users

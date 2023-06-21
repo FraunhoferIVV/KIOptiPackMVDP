@@ -76,3 +76,15 @@ assets:
             if not asset.asset_collection:
                 asset.asset_collection = v['collection']
         return v
+
+
+class FrontendUser(BaseModel):
+    password: str
+
+
+class FrontendConfiguration(FastIoTConfigModel):
+    frontend_title: str
+    upload_forbidden: bool = False
+    table_readonly: bool = False
+
+    users: Dict[str, FrontendUser] = {}
