@@ -15,4 +15,5 @@ class HealthCheckRequest(FastIoTRequest):
 
 class ArbitraryJSONMessage(FastIoTPublish):
     """ Class used to send any type of JSON message received as data upload """
+    _handles_hierarchical_subjects = False
     json_data: dict

@@ -81,3 +81,20 @@ You can now start any service using its `run.py` or the `xx_service.py` file.
 It will read all environment variables from the integration test deployment and thus easily connect to broker, database and co.
 
 ENJOY!
+
+## Using the MVDP as a library
+
+### As standalone library
+
+You may also just use the MVDP as library: Install with 
+`pip install "git+https://github.com/FraunhoferIVV/KIOptiPackMVDP"`
+
+This is helpful for certain parts of the library like the integrated [EDC Client](src/mvdp/edc_client).
+
+### As extension in a FastIoT project
+
+You may also use this to create a custom [FastIoT](https://github.com/FraunhoferIVV/FastIoT) and use some extensions 
+provided by this Software like the [command to create custom MVDP Deployments](src/mvdp/fiot_extension/cmd_create.py).
+Simply create a new FastIoT project like documented in the FastIoT documentation (`fiot create new-project`, …).
+To use the FastIoT extensions provided by the MVDP please add `'mvdp.fiot_extension'` to the list `extensions` in 
+your `configure.py`.
