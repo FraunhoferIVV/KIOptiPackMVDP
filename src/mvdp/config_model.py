@@ -11,6 +11,9 @@ class AssetServingTypeEnum(str, Enum):
 
 
 class AssetConfig(BaseModel):
+    class Config:
+        use_enum_values = True
+
     description: str
     """ Add a short description of the asset"""
     policy: str = "default"
