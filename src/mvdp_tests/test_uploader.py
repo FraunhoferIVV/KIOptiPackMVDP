@@ -39,8 +39,7 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
     @unittest.skip("Uploading not working in test case yet")
     async def test_upload_empty(self):
         async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
-            uploader = DataSpaceUploader(server='localhost',
-                                         port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
+            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
             df = DataFrame({
                 'ExperimentName': ['exp1', '-', 'exp2'],
                 'Parameter': ['param1', 'param2', 'param2'],
@@ -64,8 +63,8 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
     @unittest.skip("Uploading not working in test case yet")
     async def test_upload_only_parameters(self):
         async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
-            uploader = DataSpaceUploader(server='localhost',
-                                         port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
+            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
+
             parameters = DataFrame({
                 'ExperimentName': ['exp1', '-', 'exp2'],
                 'Parameter': ['param1', 'param2', 'param2'],
@@ -81,8 +80,8 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
     async def test_upload_integration(self):
         async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
 
-            uploader = DataSpaceUploader(server='localhost',
-                                         port=int(os.environ[MVDP_DATAFRAME_HANDLER_PORT]))
+            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
+
             parameters_df = DataFrame({
                 'ExperimentName': ['exp1', '-', 'exp2'],
                 'Parameter': ['param1', 'param2', 'param2'],

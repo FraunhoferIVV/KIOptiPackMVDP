@@ -58,8 +58,6 @@ class DataframeHandlerService(FastIoTService):
         """ Methods to start once the module is initialized """
         self._uvicorn_proc.start()
         await asyncio.sleep(0.2)  # time for the server to start
-        await self.broker_connection.publish(Thing.get_subject('mine'),
-                                             msg=Thing(value=1, timestamp=get_time_now(), machine='1', name="one"))
 
     async def _stop(self):
         """ Methods to call on module shutdown """
