@@ -13,13 +13,13 @@ from mvdp.data_space_uploader.constants import DataFrameType
 
 class DataSpaceUploader:
 
-    def __init__(self, server: str, port: int):
+    def __init__(self, base_url: str,):
         """
         Instantiate data space uploader
-        :param server: http server link
-        :param port: a free port for the service
+        :param base_url: URL to post the data to, maybe something like
+        http://service.kioptipack.ivv-dd.fhg.de:5080/my_uploader
         """
-        self.post_url = f"http://{server}:{port}/machine_upload"
+        self.post_url = f"{base_url}/machine_upload"
         self.max_post_len = int(1e3)
         self._logger = logging.getLogger('data_space_uploader_logger')
         # add local logger
