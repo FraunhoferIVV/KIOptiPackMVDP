@@ -27,6 +27,7 @@ dependencies = [
 
 [project.optional-dependencies]
 webservice = ["fastapi",
+    "fastapi-login",
     "python-multipart",
     "aiofiles",
     "uvicorn[standard]",
