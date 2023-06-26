@@ -24,6 +24,7 @@ from fastiot.msg.thing import Thing
 from fastiot.util.config_helper import read_config
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
+from starlette.responses import RedirectResponse
 
 from mvdp.config_model import FrontendConfiguration
 from mvdp.msg import HealthCheckRequest, HealthCheckReply, ArbitraryJSONMessage
@@ -31,7 +32,7 @@ from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.frontend.api_response_msg import HealthResponse, PossibleFileTypes, PossibleCSVDelimiters
 from mvdp_services.frontend.env import env_frontend
 from mvdp_services.frontend.table_handler import TableHandler
-from mvdp_services.frontend.manager import manager
+from mvdp_services.frontend.manager import manager, NotAuthenticatedException
 
 
 class FrontendService(FastIoTService):
@@ -51,6 +52,8 @@ class FrontendService(FastIoTService):
         # read frontend service config file
         self.config = FrontendConfiguration.from_service(self)
 
+
+
     def _register_routes(self):
         self.app.add_middleware(
             CORSMiddleware,
@@ -60,8 +63,11 @@ class FrontendService(FastIoTService):
             allow_headers=["*"],
         )
 
+        # authentication
+        self.app.add_exception_handler(NotAuthenticatedException, self._authentication_exc_handler)
         manager.user_loader()(self._load_user)
 
+        # endpoints
         self.app.get("/api/auth/token")(self._login)
         self.app.get("/api/health_check")(self._health_check)
         self.app.get("/api/config/{config_variable}")(self._provide_config_variable)
@@ -123,6 +129,10 @@ class FrontendService(FastIoTService):
         user = user_db.get(email)
         return user
 
+    # all parameters are mandatory
+    def _authentication_exc_handler(self, request, exc):
+        return RedirectResponse(url='/login')
+
     def _login(self, data: OAuth2PasswordRequestForm = Depends()):
         email = data.username
         password = data.password
@@ -139,7 +149,7 @@ class FrontendService(FastIoTService):
         return {'access_token': access_token, 'token_type': 'bearer'}
 
     async def _handle_upload(self,
-                             # user=Depends(manager),
+                             user=Depends(manager),
                              data_file: bytes = File(),
                              file_type: PossibleFileTypes = Form(...),
                              data_delimiter: Optional[PossibleCSVDelimiters] = Form(None),
@@ -280,6 +290,8 @@ class FrontendService(FastIoTService):
             delete_query = vars(thing)
             result = self.mongodb_col.delete_one(delete_query)
             self._logger.debug(f"Documents deleted: {result.deleted_count}")
+
+
 
 
 if __name__ == '__main__':

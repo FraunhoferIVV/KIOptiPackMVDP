@@ -18,7 +18,9 @@ class TableHandler:
         database = get_mongodb_client_from_env().get_database(env_mongodb.name)
         self.mongodb_col = database.get_collection(env_frontend.mongodb_collection)
 
-    def return_table(self, user=Depends(manager)) -> Table:
+    def return_table(self,
+                     #user=Depends(manager)
+                    ) -> Table:
         """ Transfer the table
         """
 

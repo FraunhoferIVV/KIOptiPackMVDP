@@ -8,14 +8,14 @@
 certifi==2023.5.7         # via requests
 charset-normalizer==3.1.0  # via requests
 et-xmlfile==1.1.0         # via openpyxl
-fastiot==1.0              # via mvdp (pyproject.toml)
+fastiot~=0.9.20
 idna==3.4                 # via requests
 msgpack==1.0.5            # via fastiot
 nats-py==2.3.1            # via fastiot
 numpy==1.25.0             # via pandas
 openpyxl==3.1.2           # via mvdp (pyproject.toml)
 pandas==2.0.2             # via mvdp (pyproject.toml)
-pydantic==1.10.9          # via fastiot
+pydantic~=1.10.4
 python-dateutil==2.8.2    # via pandas
 pytz==2023.3              # via pandas
 pyyaml==6.0               # via fastiot
@@ -24,3 +24,9 @@ six==1.16.0               # via python-dateutil
 typing-extensions==4.6.3  # via pydantic
 tzdata==2023.3            # via pandas
 urllib3==2.0.3            # via requests
+
+typer~=0.7.0
+rich~=12.6.0
+uvicorn~=0.20.0
+fastapi~=0.89.1
+starlette~=0.22.0
