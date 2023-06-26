@@ -139,7 +139,7 @@ class FrontendService(FastIoTService):
         return {'access_token': access_token, 'token_type': 'bearer'}
 
     async def _handle_upload(self,
-                             user=Depends(manager),
+                             # user=Depends(manager),
                              data_file: bytes = File(),
                              file_type: PossibleFileTypes = Form(...),
                              data_delimiter: Optional[PossibleCSVDelimiters] = Form(None),
@@ -149,7 +149,7 @@ class FrontendService(FastIoTService):
         Endpoint to upload files formed as table (Excel .xlsx-files or comma separated values .csv) or plain JSON.
         If CSV is used decimal and data delimiter must be set.
         """
-        if self.config['upload_forbidden']:
+        if self.config.upload_forbidden:
             raise HTTPException(status_code=500, detail='Uploading forbidden by configuration!')
 
         data_frame = await self._parse_file(data_file=data_file, file_type=file_type,
@@ -209,7 +209,7 @@ class FrontendService(FastIoTService):
                     timestamp = row_timestamp
 
                 # create thing
-                thing = Thing(machine=self.config['frontend_title'],
+                thing = Thing(machine=self.config.frontend_title,
                               name=attr, measurement_id=measurement_id,
                               value=row[attr], timestamp=timestamp)
 
@@ -223,9 +223,9 @@ class FrontendService(FastIoTService):
                                              msg=message)
 
     async def _handle_changes(self,
-                              user=Depends(manager),
+                              # user=Depends(manager),
                               changed_items: str = Form(...)):
-        if self.config['table_readonly']:
+        if self.config.table_readonly:
             raise HTTPException(status_code=500, detail='The data table is read only!')
 
         changes = json.loads(changed_items)
