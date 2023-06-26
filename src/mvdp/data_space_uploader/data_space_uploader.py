@@ -13,7 +13,7 @@ from mvdp.data_space_uploader.constants import DataFrameType
 
 class DataSpaceUploader:
 
-    def __init__(self, base_url: str,):
+    def __init__(self, base_url: str):
         """
         Instantiate data space uploader
         :param base_url: URL to post the data to, maybe something like
@@ -49,7 +49,7 @@ class DataSpaceUploader:
 
         # get starting timestamp for parameters
         try:
-            start_timestamp = values.head(1).to_dict().get("Timestamp").get(0)
+            start_timestamp = list(values.head(1).to_dict().get("Timestamp").values())[0]
         except Exception:
             self._logger.warning("No start timestamp found: using the current time for parameters")
             start_timestamp = get_time_now()
@@ -73,6 +73,7 @@ class DataSpaceUploader:
         :param dataframe: dataframe to upload
         :param start_timestamp: universal timestamp for the dataframe if needed
         """
+        dataframe = dataframe.reset_index()
         # creating dataframe list
         if df_type == DataFrameType.values:
             # build dataframe list with reduced values
@@ -96,7 +97,7 @@ class DataSpaceUploader:
                 "df_type": df_type,
                 "content": batch.to_json()
             }
-            if start_timestamp:
+            if df_type == df_type == DataFrameType.parameters:
                 msg["start_timestamp"] = start_timestamp
             self._logger.debug("Message:" + str(msg))
             # send message
@@ -152,12 +153,12 @@ class DataSpaceUploader:
             1. column: reduced column of the values dataframe
             2. column: corresponding timestamps for each value in the first column
         """
-        if 'Timestamp' not in dataframe:
+        if "Timestamp" not in dataframe:
             raise Exception('Impossible to reduce values dataframe without Timestamp column!')
         # create a list of the reduced columns
         columns_dfs = []
         for column in dataframe:
-            if column != 'Timestamp':
+            if column != "Timestamp":
                 columns_dfs.append(DataSpaceUploader._reduce_columns(dataframe[column]))
         # hang timestamp column on each other column (performs left join)
         columns_dfs = [col_df.join(dataframe[['Timestamp']]) for col_df in columns_dfs]
@@ -173,8 +174,9 @@ class DataSpaceUploader:
         same_value_indices = []
         items = list(column.items())
         for index, row in items[1:]:
+            column_index = index - 1
             if row == items[index - 1][1]:  # check if the row equals the previous row
-                same_value_indices.append(index)
+                same_value_indices.append(column_index)
         column = DataFrame(column).drop(same_value_indices)
         return column
 
