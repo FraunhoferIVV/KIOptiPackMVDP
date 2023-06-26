@@ -75,8 +75,8 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
 
             results = list(self._db_col.find({}))
             self.assertEqual(3, len(results))
-
-    @unittest.skip("Uploading not working in test case yet")
+    """
+    @unittest.skip("Uploading not working in the test case yet")
     async def test_upload_integration(self):
         async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
 
@@ -118,6 +118,50 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
                         found = True
                         break
                 self.assertTrue(found)
+
+    """
+
+    async def test_upload_integration(self):
+
+        uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
+
+        parameters_df = DataFrame({
+            'ExperimentName': ['exp1', '-', 'exp2'],
+            'Parameter': ['param1', 'param2', 'param2'],
+            'Parameter': ['param1', 'param2', 'param2'],
+            'Value': [False, 42, 42.5]
+        })
+        values_df = DataFrame({
+            'Timestamp': [
+                datetime(year=2023, month=4, day=13, microsecond=1000),
+                datetime(year=2023, month=4, day=13, microsecond=2000),
+                datetime(year=2023, month=4, day=13, microsecond=3000)
+            ],
+            'Sensor_1': [3, 7, 7],
+            'Sensor_2': [0.2, 'undefined', 2]
+        })
+        try:
+            uploader.upload('experiment728', reformat_parameters(parameters_df, 'Value'), values_df)
+            await asyncio.sleep(2)
+        except:
+            pass
+        results = list(self._db_col.find({}))
+        self.assertEqual(8, len(results))
+        thing_parts = [{
+            'name': '::exp1::param2',
+            'value': 42
+        }, {
+            'timestamp': datetime(2023, 4, 13, 0, 0, 0, 2000),
+            'name': 'Sensor_1',
+            'value': 7
+        }]
+        for thing_part in thing_parts:
+            found = False
+            for result in results:
+                if thing_part.items() <= result.items():
+                    found = True
+                    break
+            self.assertTrue(found)
 
     async def test_unit_parameter_formatting(self):
         parameters_df = DataFrame({

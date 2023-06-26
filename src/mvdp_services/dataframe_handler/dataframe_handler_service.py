@@ -34,12 +34,14 @@ class DataframeHandlerService(FastIoTService):
         self._register_routes()
         self._uvicorn_proc = Process(target=uvicorn.run,
                                      args=(self.app,),
-                                     kwargs={"host": "0.0.0.0", "port": env_dataframe_handler.port,
+                                     kwargs={"host": "localhost", "port": env_dataframe_handler.port,
                                              "log_level": env_basic.log_level},
                                      daemon=True)
 
         # define a test machine for making things
         self.machine = "TEST_MACHINE"
+
+        self._logger.info("DataFrameHandlerService initialized")
 
     def _register_routes(self):
         """
@@ -102,8 +104,12 @@ class DataframeHandlerService(FastIoTService):
                           )
             self._logger.debug(thing)
             # no unit support yet
-            await self.broker_connection.publish(subject=Thing.get_subject("DataFrameImporter"),
-                                                 msg=thing)
+            try:
+                await self.broker_connection.publish(subject=Thing.get_subject("DataFrameImporter"),
+                                                     msg=thing)
+                await asyncio.sleep(0.5)
+            except Exception:
+                self._logger.error("Error by sending message to message broker")
 
     async def _send_values_things(self, material_id, dataframe):
         """
@@ -132,8 +138,12 @@ class DataframeHandlerService(FastIoTService):
             except:
                 raise HTTPException("Can't build Thing object from a table cell!")
             # no unit support yet
-            await self.broker_connection.publish(subject=Thing.get_subject("DataFrameImporter"),
-                                                 msg=thing)
+            try:
+                await self.broker_connection.publish(subject=Thing.get_subject("DataFrameImporter"),
+                                                     msg=thing)
+                await asyncio.sleep(0.0005)
+            except Exception:
+                self._logger.error("Error by sending message to message broker")
 
 
 if __name__ == '__main__':
