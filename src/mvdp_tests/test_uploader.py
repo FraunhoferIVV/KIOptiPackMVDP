@@ -34,6 +34,7 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         self._db_col.delete_many({})
 
     async def asyncTearDown(self):
+        self._db_col.delete_many({})
         await self.broker_connection.close()
 
     async def test_upload_empty(self):
