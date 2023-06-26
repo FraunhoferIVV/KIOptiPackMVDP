@@ -13,6 +13,7 @@ from pandas import DataFrame
 
 from mvdp.data_space_uploader.data_space_uploader import DataSpaceUploader
 from mvdp.tools.dataframe_formatting import reformat_parameters
+from mvdp_services.dataframe_handler.dataframe_handler_service import DataframeHandlerService
 from mvdp_services.dataframe_handler.env import MVDP_DATAFRAME_HANDLER_PORT
 
 
