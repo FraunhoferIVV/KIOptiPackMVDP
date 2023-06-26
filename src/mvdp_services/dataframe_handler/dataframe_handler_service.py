@@ -4,20 +4,16 @@ Application logic for dataframe_handler service
 
 import asyncio
 import logging
-import pandas as pd
 from datetime import datetime
-from multiprocessing import Process
-import uvicorn
 
-
+import pandas as pd
 from fastapi import FastAPI, Form, HTTPException
 from fastiot.core import FastIoTService
-from fastiot.core.time import get_time_now
-from fastiot.env import env_basic
 from fastiot.msg.thing import Thing
 from starlette.middleware.cors import CORSMiddleware
 
 from mvdp.data_space_uploader.constants import DataFrameType
+from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.dataframe_handler.env import env_dataframe_handler
 
 
@@ -32,11 +28,7 @@ class DataframeHandlerService(FastIoTService):
 
         self.app = FastAPI(root_path=env_dataframe_handler.base_path)
         self._register_routes()
-        self._uvicorn_proc = Process(target=uvicorn.run,
-                                     args=(self.app,),
-                                     kwargs={"host": "localhost", "port": env_dataframe_handler.port,
-                                             "log_level": env_basic.log_level},
-                                     daemon=True)
+        self.server = UvicornAsyncServer(self.app, port=env_dataframe_handler.port)
 
         # define a test machine for making things
         self.machine = "TEST_MACHINE"
@@ -58,12 +50,12 @@ class DataframeHandlerService(FastIoTService):
 
     async def _start(self):
         """ Methods to start once the module is initialized """
-        self._uvicorn_proc.start()
+        await self.server.up()
         await asyncio.sleep(0.2)  # time for the server to start
 
     async def _stop(self):
         """ Methods to call on module shutdown """
-        self._uvicorn_proc.terminate()
+        await self.server.down()
 
     async def _handle_post(self, material_id: str = Form(...),
                            start_timestamp: datetime = Form(None),
