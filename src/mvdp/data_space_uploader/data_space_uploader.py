@@ -73,7 +73,7 @@ class DataSpaceUploader:
         :param dataframe: dataframe to upload
         :param start_timestamp: universal timestamp for the dataframe if needed
         """
-        dataframe = dataframe.reset_index()
+        dataframe = dataframe.reset_index(drop=True)
         # creating dataframe list
         if df_type == DataFrameType.values:
             # build dataframe list with reduced values
@@ -152,6 +152,7 @@ class DataSpaceUploader:
         :return: list of dataframes with 2 columns:
             1. column: reduced column of the values dataframe
             2. column: corresponding timestamps for each value in the first column
+        !Attention: dataframe must contain a column named "Timestamp"
         """
         if "Timestamp" not in dataframe:
             raise Exception('Impossible to reduce values dataframe without Timestamp column!')
@@ -174,9 +175,8 @@ class DataSpaceUploader:
         same_value_indices = []
         items = list(column.items())
         for index, row in items[1:]:
-            column_index = index - 1
-            if row == items[index - 1][1]:  # check if the row equals the previous row
-                same_value_indices.append(column_index)
+            if row == items[index-1][1]:  # check if the row equals the previous row
+                same_value_indices.append(index)
         column = DataFrame(column).drop(same_value_indices)
         return column
 

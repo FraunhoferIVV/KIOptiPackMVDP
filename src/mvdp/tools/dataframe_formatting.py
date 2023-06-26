@@ -23,7 +23,7 @@ def fill_tree_dataframe(dataframe: DataFrame):
     return DataFrame.from_dict(fill_table)
 
 
-def reformat_parameters(parameters: DataFrame):
+def reformat_parameters(parameters: DataFrame, values_name: str):
     """
     prepares the parameters dataframe for the uploading
     :return: dataframe with 2 columns:
@@ -46,7 +46,7 @@ def reformat_parameters(parameters: DataFrame):
     for index, row in parameters.iterrows():
         merged_param = ""
         for attr in list(parameters):
-            if attr == 'Value':
+            if attr == values_name:
                 tree_parameters['ParValue'].append(row[attr])
             else:  # one of the parameters, that have to be merged
                 merged_param += "::" + row[attr]

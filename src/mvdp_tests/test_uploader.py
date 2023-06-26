@@ -13,7 +13,6 @@ from pandas import DataFrame
 
 from mvdp.data_space_uploader.data_space_uploader import DataSpaceUploader
 from mvdp.tools.dataframe_formatting import reformat_parameters
-from mvdp_services.dataframe_handler.dataframe_handler_service import DataframeHandlerService
 from mvdp_services.dataframe_handler.env import MVDP_DATAFRAME_HANDLER_PORT
 
 
@@ -90,18 +89,19 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
             values_df = DataFrame({
                 'Timestamp': [
                     datetime(year=2023, month=4, day=13, microsecond=1000),
-                    datetime(year=2023, month=4, day=13, microsecond=2000)
+                    datetime(year=2023, month=4, day=13, microsecond=2000),
+                    datetime(year=2023, month=4, day=13, microsecond=3000)
                 ],
-                'Sensor_1': [3, 7],
-                'Sensor_2': [0.2, 'undefined']
+                'Sensor_1': [3, 7, 7],
+                'Sensor_2': [0.2, 'undefined', 2]
             })
             try:
-                uploader.upload('experiment728', parameters_df, values_df)
+                uploader.upload('experiment728', reformat_parameters(parameters_df, 'Value'), values_df)
                 await asyncio.sleep(2)
             except:
                 pass
             results = list(self._db_col.find({}))
-            self.assertEqual(7, len(results))
+            self.assertEqual(8, len(results))
             thing_parts = [{
                 'name': '::exp1::param2',
                 'value': 42
@@ -130,9 +130,9 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
                           '::exp2::param2'],
             'ParValue': [False, 42, 42.5]
         })
-        result_1 = reformat_parameters(parameters_df)
+        result_1 = reformat_parameters(parameters_df, 'Value')
         self.assertTrue(formatted_parameters.equals(result_1))
-        result_2 = reformat_parameters(result_1)  # result_ 1 has already been formatted
+        result_2 = reformat_parameters(result_1, 'Value')  # result_ 1 has already been formatted
         self.assertTrue(formatted_parameters.equals(result_2))
 
     async def test_unit_validation(self):
