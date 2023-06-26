@@ -70,7 +70,7 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
                 'Parameter': ['param1', 'param2', 'param2'],
                 'Value': [False, 42, 42.5]
             })
-            uploader.upload('experiment323', reformat_parameters(parameters))
+            uploader.upload('experiment323', reformat_parameters(parameters, 'Value'))
             await asyncio.sleep(0.2)
 
             results = list(self._db_col.find({}))
