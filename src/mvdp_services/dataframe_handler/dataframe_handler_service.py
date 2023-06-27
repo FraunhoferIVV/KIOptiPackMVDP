@@ -99,7 +99,6 @@ class DataframeHandlerService(FastIoTService):
             try:
                 await self.broker_connection.publish(subject=Thing.get_subject("DataFrameImporter"),
                                                      msg=thing)
-                await asyncio.sleep(0.5)
             except Exception:
                 self._logger.error("Error by sending message to message broker")
 
@@ -133,7 +132,6 @@ class DataframeHandlerService(FastIoTService):
             try:
                 await self.broker_connection.publish(subject=Thing.get_subject("DataFrameImporter"),
                                                      msg=thing)
-                await asyncio.sleep(0.0005)
             except Exception:
                 self._logger.error("Error by sending message to message broker")
 
