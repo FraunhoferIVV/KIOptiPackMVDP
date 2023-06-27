@@ -1,0 +1,6 @@
+frontend_title: "MVDP Raw materials database"
+upload_forbidden: false
+table_readonly: false
+users:
+  hello@:
+    password: ttt

@@ -1,0 +1,6 @@
+frontend_title: "MVDP MoTiV Data Storage"
+upload_forbidden: true
+table_readonly: true
+users:
+  hello@:
+    password: ttt

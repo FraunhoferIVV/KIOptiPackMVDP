@@ -3,10 +3,10 @@ search_index:
   - name
 collection: 'thing'
 assets:
-  - Full:
-      description: "Complete Data"
-      policy: default
-      constraints: {}
+  Full:
+    description: "Complete Data"
+    policy: default
+    constraints: {}
 
 
 # each constraint attribute is a list of possible values and intervals (start, end) (default order)
