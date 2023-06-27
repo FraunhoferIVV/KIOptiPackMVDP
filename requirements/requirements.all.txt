@@ -18,7 +18,7 @@ et-xmlfile==1.1.0         # via openpyxl
 exceptiongroup==1.1.1     # via anyio
 fastapi==0.98.0           # via fastapi-login, mvdp (pyproject.toml)
 fastapi-login==1.9.0      # via mvdp (pyproject.toml)
-fastiot==1.0              # via mvdp (pyproject.toml)
+fastiot==1.0.1            # via mvdp (pyproject.toml)
 h11==0.14.0               # via uvicorn
 httptools==0.5.0          # via uvicorn
 idna==3.4                 # via anyio, requests, trio

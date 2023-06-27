@@ -19,7 +19,7 @@ description = ""
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "fastiot>=1,<2",
+    "fastiot>=1.0.1,<2",
     "pandas",
     "openpyxl",
     "requests>2,<3",

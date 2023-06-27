@@ -1,5 +1,5 @@
-import asyncio
 import os
+import time
 import unittest
 from datetime import datetime
 
@@ -23,10 +23,8 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         populate_test_env()
         self.broker_connection = await NatsBrokerConnection.connect()
 
-        if env_cli.is_ci_runner:
+        if env_cli.is_ci_runner or not os.environ.get(MVDP_DATAFRAME_HANDLER_PORT):
             os.environ[MVDP_DATAFRAME_HANDLER_PORT] = str(get_local_random_port())
-        else:
-            os.environ[MVDP_DATAFRAME_HANDLER_PORT] = '5480'
 
         db_client = get_mongodb_client_from_env()
         database = db_client.get_database(env_mongodb.name)
@@ -38,82 +36,83 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         await self.broker_connection.close()
 
     async def test_upload_empty(self):
-        uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
-        df = DataFrame({
-            'ExperimentName': ['exp1', '-', 'exp2'],
-            'Parameter': ['param1', 'param2', 'param2'],
-            'Value': [False, 42, 42.5]
-        })
-        # upload empty parameters
-        self.assertRaises(Exception,
-                          uploader.upload,
-                          'experiment324',
-                          DataFrame())
-        # upload both parameters and value empty
-        await asyncio.sleep(0.05)
-        self.assertRaises(Exception,
-                          uploader.upload,
-                          'experiment324',
-                          DataFrame(),
-                          DataFrame())
-        results = list(self._db_col.find({}))
-        self.assertEqual(0, len(results))
+        with BackgroundProcess(DataframeHandlerService, startup_time=1.5):
 
-    async def test_upload_only_parameters(self):
-        uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
+            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
+            df = DataFrame({
+                'ExperimentName': ['exp1', '-', 'exp2'],
+                'Parameter': ['param1', 'param2', 'param2'],
+                'Value': [False, 42, 42.5]
+            })
+            # upload empty parameters
+            self.assertRaises(Exception,
+                              uploader.upload,
+                              'experiment324',
+                              DataFrame())
+            # upload both parameters and value empty
+            time.sleep(0.05)
+            self.assertRaises(Exception,
+                              uploader.upload,
+                              'experiment324',
+                              DataFrame(),
+                              DataFrame())
+            results = list(self._db_col.find({}))
+            self.assertEqual(0, len(results))
 
-        parameters = DataFrame({
-            'ExperimentName': ['exp1', '-', 'exp2'],
-            'Parameter': ['param1', 'param2', 'param2'],
-            'Value': [False, 42, 42.5]
-        })
-        uploader.upload('experiment323', reformat_parameters(parameters, 'Value'))
-        await asyncio.sleep(0.2)
+    def test_upload_only_parameters(self):
+        with BackgroundProcess(DataframeHandlerService, startup_time=1.5):
+            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
 
-        results = list(self._db_col.find({}))
-        self.assertEqual(3, len(results))
+            parameters = DataFrame({
+                'ExperimentName': ['exp1', '-', 'exp2'],
+                'Parameter': ['param1', 'param2', 'param2'],
+                'Value': [False, 42, 42.5]
+            })
+
+            uploader.upload('experiment323', reformat_parameters(parameters, 'Value'))
+            time.sleep(0.3)
+
+            results = list(self._db_col.find({}))
+            self.assertEqual(3, len(results))
 
     async def test_upload_integration(self):
+        with BackgroundProcess(DataframeHandlerService, startup_time=1.5):
+            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
 
-        uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
-
-        parameters_df = DataFrame({
-            'ExperimentName': ['exp1', '-', 'exp2'],
-            'Parameter': ['param1', 'param2', 'param2'],
-            'Parameter': ['param1', 'param2', 'param2'],
-            'Value': [False, 42, 42.5]
-        })
-        values_df = DataFrame({
-            'Timestamp': [
-                datetime(year=2023, month=4, day=13, microsecond=1000),
-                datetime(year=2023, month=4, day=13, microsecond=2000),
-                datetime(year=2023, month=4, day=13, microsecond=3000)
-            ],
-            'Sensor_1': [3, 7, 7],
-            'Sensor_2': [0.2, 'undefined', 2]
-        })
-        try:
+            parameters_df = DataFrame({
+                'ExperimentName': ['exp1', '-', 'exp2'],
+                'Parameter': ['param1', 'param2', 'param2'],
+                'Value': [False, 42, 42.5]
+            })
+            values_df = DataFrame({
+                'Timestamp': [
+                    datetime(year=2023, month=4, day=13, microsecond=1000),
+                    datetime(year=2023, month=4, day=13, microsecond=2000),
+                    datetime(year=2023, month=4, day=13, microsecond=3000)
+                ],
+                'Sensor_1': [3, 7, 7],
+                'Sensor_2': [0.2, 'undefined', 2]
+            })
             uploader.upload('experiment728', reformat_parameters(parameters_df, 'Value'), values_df)
-            await asyncio.sleep(2)
-        except:
-            pass
-        results = list(self._db_col.find({}))
-        self.assertEqual(8, len(results))
-        thing_parts = [{
-            'name': '::exp1::param2',
-            'value': 42
-        }, {
-            'timestamp': datetime(2023, 4, 13, 0, 0, 0, 2000),
-            'name': 'Sensor_1',
-            'value': 7
-        }]
-        for thing_part in thing_parts:
-            found = False
-            for result in results:
-                if thing_part.items() <= result.items():
-                    found = True
-                    break
-            self.assertTrue(found)
+            time.sleep(2)
+
+            results = list(self._db_col.find({}))
+            self.assertEqual(8, len(results))
+            thing_parts = [{
+                'name': '::exp1::param2',
+                'value': 42
+            }, {
+                'timestamp': datetime(2023, 4, 13, 0, 0, 0, 2000),
+                'name': 'Sensor_1',
+                'value': 7
+            }]
+            for thing_part in thing_parts:
+                found = False
+                for result in results:
+                    if thing_part.items() <= result.items():
+                        found = True
+                        break
+                self.assertTrue(found)
 
     async def test_unit_parameter_formatting(self):
         parameters_df = DataFrame({
@@ -208,93 +207,6 @@ class TestDataSpaceUploader(unittest.IsolatedAsyncioTestCase):
         result = DataSpaceUploader._reduce_dataframe(values_df)
         for col_df, res_col_df in zip(columns_dfs, result):
             self.assertTrue(col_df.equals(res_col_df))
-
-
-"""
-    @unittest.skip("Uploading not working in test case yet")
-    async def test_upload_empty(self):
-        async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
-            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
-            df = DataFrame({
-                'ExperimentName': ['exp1', '-', 'exp2'],
-                'Parameter': ['param1', 'param2', 'param2'],
-                'Value': [False, 42, 42.5]
-            })
-            # upload empty parameters
-            self.assertRaises(Exception,
-                              uploader.upload,
-                              'experiment324',
-                              DataFrame())
-            # upload both parameters and value empty
-            await asyncio.sleep(0.05)
-            self.assertRaises(Exception,
-                              uploader.upload,
-                              'experiment324',
-                              DataFrame(),
-                              DataFrame())
-            results = list(self._db_col.find({}))
-            self.assertEqual(0, len(results))
-
-    @unittest.skip("Uploading not working in test case yet")
-    async def test_upload_only_parameters(self):
-        async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
-            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
-
-            parameters = DataFrame({
-                'ExperimentName': ['exp1', '-', 'exp2'],
-                'Parameter': ['param1', 'param2', 'param2'],
-                'Value': [False, 42, 42.5]
-            })
-            uploader.upload('experiment323', reformat_parameters(parameters, 'Value'))
-            await asyncio.sleep(0.2)
-
-            results = list(self._db_col.find({}))
-            self.assertEqual(3, len(results))
-
-    @unittest.skip("Uploading not working in the test case yet")
-    async def test_upload_integration(self):
-        async with BackgroundProcess(DataframeHandlerService, startup_time=0.4):
-
-            uploader = DataSpaceUploader(base_url=f'http://localhost:{os.environ[MVDP_DATAFRAME_HANDLER_PORT]}')
-
-            parameters_df = DataFrame({
-                'ExperimentName': ['exp1', '-', 'exp2'],
-                'Parameter': ['param1', 'param2', 'param2'],
-                'Value': [False, 42, 42.5]
-            })
-            values_df = DataFrame({
-                'Timestamp': [
-                    datetime(year=2023, month=4, day=13, microsecond=1000),
-                    datetime(year=2023, month=4, day=13, microsecond=2000),
-                    datetime(year=2023, month=4, day=13, microsecond=3000)
-                ],
-                'Sensor_1': [3, 7, 7],
-                'Sensor_2': [0.2, 'undefined', 2]
-            })
-            try:
-                uploader.upload('experiment728', reformat_parameters(parameters_df, 'Value'), values_df)
-                await asyncio.sleep(2)
-            except:
-                pass
-            results = list(self._db_col.find({}))
-            self.assertEqual(8, len(results))
-            thing_parts = [{
-                'name': '::exp1::param2',
-                'value': 42
-            }, {
-                'timestamp': datetime(2023, 4, 13, 0, 0, 0, 2000),
-                'name': 'Sensor_1',
-                'value': 7
-            }]
-            for thing_part in thing_parts:
-                found = False
-                for result in results:
-                    if thing_part.items() <= result.items():
-                        found = True
-                        break
-                self.assertTrue(found)
-
-    """
 
 
 if __name__ == '__main__':
