@@ -49,7 +49,7 @@ class DataSpaceUploader:
 
         # get starting timestamp for parameters
         try:
-            start_timestamp = list(values.head(1).to_dict().get("Timestamp").values())[0]
+            start_timestamp = datetime.combine(datetime.today(), values.index[0])
         except Exception:
             self._logger.warning("No start timestamp found: using the current time for parameters")
             start_timestamp = get_time_now()
