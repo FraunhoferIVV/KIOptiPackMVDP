@@ -38,3 +38,10 @@ def edc_put_assets(api_client, assets):
         except ApiException:
             response = asset_api_instance.create_asset(body=asset_entry)
         logging.debug(response)
+
+
+def edc_get_contract(asset_id: str):
+    """
+    METHOD STUB!
+    Returns the contract for a given (remote) asset
+    """

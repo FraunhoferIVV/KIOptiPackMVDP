@@ -1,25 +1,32 @@
-from typing import Type
+from __future__ import annotations
 
+from typing import Type, TYPE_CHECKING
+
+import pandas as pd
 from fastapi import APIRouter
-from fastapi import HTTPException, Query
+from fastapi import HTTPException
 from fastapi.responses import Response, JSONResponse
-from fastiot.core import FastIoTService
+from fastiot.msg import Thing
 from fastiot.msg.custom_db_data_type_conversion import from_mongo_data
 from fastiot.util.object_helper import parse_object_list
 
 from mvdp.config_model import AssetServingTypeEnum
-from mvdp.tools.dataprovider_functions import *
-from mvdp_services.data_provider.api_response_msg import AssetList, AssetShortview
+from mvdp.tools.dataprovider_functions import calculate_constraints, build_query, things_to_rows
+from mvdp_services.data_provider.api_response_msg import AssetList, AssetShortview, QueryConstraint
+
+if TYPE_CHECKING:
+    from mvdp_services.data_provider.data_provider_service import DataProviderService
 
 
-class LocalAssets:
+class AssetProvider:
 
-    def __init__(self, service: Type[FastIoTService]):
+    def __init__(self, service: Type[DataProviderService]):
         self.router_ = APIRouter()
         self.service = service
 
-        self.router_.get("/")(self._list_local_assets)
-        self.router_.get("/{asset_name}")(self._serve_local_asset)
+        self.router_.get("/{asset_name}")(self._serve_asset)
+        self.router_.get("/local_assets/")(self._list_local_assets)
+        self.router_.get("/local_asset/{asset_name}")(self._serve_local_asset)
 
     def _list_local_assets(self) -> AssetList:
         """ List all assets configured in the dataspace participant """
@@ -34,13 +41,11 @@ class LocalAssets:
 
         return AssetList(assets=result)
 
-    def _serve_local_asset(self, asset_name: str,
-                           material_id: list = Query([]),
-                           timestamp: list = Query([]),
-                           columns: list = Query([]),
-                           value: list = Query([]),
-                           unit: list = Query([]),
-                           machine: list = Query([])) -> Type[Response]:
+    def _serve_asset(self, asset_name: str) -> Type[Response]:
+        if asset_name in self.service.assets:
+            return self._serve_local_asset(asset_name)
+
+    def _serve_local_asset(self, asset_name: str, query: QueryConstraint = QueryConstraint()) -> Type[Response]:
         """ Receive a single, specified asset.
 
         Optionally set some limits to filter the provided data.
@@ -49,28 +54,23 @@ class LocalAssets:
             raise HTTPException(status_code=404, detail='Asset not configured!')
 
         if self.service.assets[asset_name].asset_serving_type == AssetServingTypeEnum.thing:
-            return self.service._build_thing_asset(asset_name, material_id, timestamp, columns, value, unit, machine)
+            return self._build_thing_asset(asset_name, query)
         elif self.service.assets[asset_name].asset_serving_type == AssetServingTypeEnum.json:
-            return self.service._build_json_asset(asset_name)
+            return self._build_json_asset(asset_name)
 
         raise HTTPException(status_code=500, detail="Error in asset configuration.")
 
-    def _build_thing_asset(self, asset_name, material_id: list = Query([]),
-                           timestamp: list = Query([]),
-                           columns: list = Query([]),
-                           value: list = Query([]),
-                           unit: list = Query([]),
-                           machine: list = Query([])) -> Response:
+    def _build_thing_asset(self, asset_name, query: QueryConstraint = QueryConstraint()) -> Response:
         # TODO: enable one bounded range constraints + certain time ago
         # TODO: enable url interval queries
         # create custom_query
         custom_constraint_object = {
-            'machine': machine,
-            'measurement_id': material_id,
-            'timestamp': timestamp,
-            'name': columns,
-            'value': value,
-            'unit': unit
+            'machine': query.machine,
+            'measurement_id': query.material_id,
+            'timestamp': query.timestamp,
+            'name': query.columns,
+            'value': query.value,
+            'unit': query.unit
         }
         custom_constraints = calculate_constraints(custom_constraint_object)
         custom_query = build_query(custom_constraints)

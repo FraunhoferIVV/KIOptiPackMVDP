@@ -2,6 +2,7 @@
 Application logic for data_provider service
 """
 import logging
+from typing import Dict
 
 from fastapi import FastAPI
 from fastiot.core import FastIoTService, reply, ReplySubject
@@ -10,21 +11,21 @@ from fastiot.db.redis_helper import get_redis_client
 from fastiot.env import env_mongodb
 from starlette.middleware.cors import CORSMiddleware
 
-from mvdp.config_model import DataProviderConfiguration
+from mvdp.config_model import DataProviderConfiguration, AssetConfig
 from mvdp.edc_management_client import ApplicationObservabilityApi
 from mvdp.edc_management_client.rest import ApiException
 from mvdp.env import mvdp_env, MVDP_EDC_HOST
 from mvdp.msg import HealthCheckRequest, HealthCheckReply
-from mvdp.tools.dataprovider_functions import *
+from mvdp.tools.dataprovider_functions import calculate_constraints
 from mvdp.uvicorn_server import UvicornAsyncServer
 from mvdp_services.data_provider.edc_tools import init_edc, edc_put_assets
 from mvdp_services.data_provider.env import env_data_provider
+from mvdp_services.data_provider.routers.assets import AssetProvider
 from mvdp_services.data_provider.routers.edc import EDCCommunication
-from mvdp_services.data_provider.routers.local_assets import LocalAssets
-from mvdp_services.data_provider.routers.remote_assets import RemoteAssets
 
 
 class DataProviderService(FastIoTService):
+    assets: Dict[str, AssetConfig] = {}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -40,6 +41,8 @@ class DataProviderService(FastIoTService):
         self.app = FastAPI(root_path=env_data_provider.base_path)
         self._register_routes()
         self.server = UvicornAsyncServer(self.app, port=env_data_provider.port)
+
+        self.redis = get_redis_client()
 
         # init edc
         if mvdp_env.edc_host:
@@ -65,15 +68,11 @@ class DataProviderService(FastIoTService):
             allow_headers=["*"],
         )
 
-        local_assets = LocalAssets(service=self)
-        self.app.include_router(local_assets.router_, prefix='/local_assets')
-
-        remote_assets = RemoteAssets(service=self)
-        self.app.include_router(remote_assets.router_, prefix='/remote_assets')
+        assets = AssetProvider(service=self)
+        self.app.include_router(assets.router_, prefix='/assets')
 
         edc = EDCCommunication(service=self)
         self.app.include_router(edc.router_, prefix='/edc')
-
 
     def _init_edc(self):
         try:
@@ -83,12 +82,10 @@ class DataProviderService(FastIoTService):
             self._logger.warn("Could not upload assets to EDC. Trying to continue.")
             # TODO: Retry uploading, maybe we just had a temporary issue with the EDC.
 
-
     def _parse_config(self, config):
         self.assets = config.assets
         for asset in self.assets.values():
             asset.set_constraints(calculate_constraints(asset.constraints))
-
 
     @reply(ReplySubject(name="data_provider", msg_cls=HealthCheckRequest, reply_cls=HealthCheckReply))
     async def _health_check_response(self, _: HealthCheckRequest) -> HealthCheckReply:
@@ -96,10 +93,6 @@ class DataProviderService(FastIoTService):
         health = health_api_instance.check_health()
 
         return HealthCheckReply(edc_health=health[0].is_system_healthy)
-
-
-
-
 
 
 if __name__ == '__main__':
