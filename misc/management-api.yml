@@ -79,14 +79,11 @@ paths:
       operationId: checkHealth
       responses:
         "200":
-          description: ""
+          description: The runtime is working properly.
           content:
             application/json:
               schema:
-                type: array
-                example: null
-                items:
-                  $ref: '#/components/schemas/HealthStatus'
+                $ref: '#/components/schemas/HealthStatus'
   /check/liveness:
     get:
       tags:
@@ -96,14 +93,11 @@ paths:
       operationId: getLiveness
       responses:
         "200":
-          description: ""
+          description: The runtime is working properly.
           content:
             application/json:
               schema:
-                type: array
-                example: null
-                items:
-                  $ref: '#/components/schemas/HealthStatus'
+                $ref: '#/components/schemas/HealthStatus'
   /check/readiness:
     get:
       tags:
@@ -113,14 +107,11 @@ paths:
       operationId: getReadiness
       responses:
         "200":
-          description: ""
+          description: The runtime is able to accept requests.
           content:
             application/json:
               schema:
-                type: array
-                example: null
-                items:
-                  $ref: '#/components/schemas/HealthStatus'
+                $ref: '#/components/schemas/HealthStatus'
   /check/startup:
     get:
       tags:
@@ -130,14 +121,11 @@ paths:
       operationId: getStartup
       responses:
         "200":
-          description: ""
+          description: The runtime has completed startup.
           content:
             application/json:
               schema:
-                type: array
-                example: null
-                items:
-                  $ref: '#/components/schemas/HealthStatus'
+                $ref: '#/components/schemas/HealthStatus'
   /instances:
     get:
       tags:
@@ -381,7 +369,7 @@ paths:
               $ref: '#/components/schemas/QuerySpecDto'
       responses:
         "200":
-          description: ""
+          description: The assets matching the query
           content:
             application/json:
               schema:
@@ -598,7 +586,7 @@ paths:
               $ref: '#/components/schemas/QuerySpecDto'
       responses:
         "200":
-          description: ""
+          description: The contract agreements matching the query
           content:
             application/json:
               schema:
@@ -738,7 +726,7 @@ paths:
               $ref: '#/components/schemas/QuerySpecDto'
       responses:
         "200":
-          description: ""
+          description: The contract definitions matching the query
           content:
             application/json:
               schema:
@@ -882,7 +870,7 @@ paths:
               $ref: '#/components/schemas/QuerySpecDto'
       responses:
         "200":
-          description: ""
+          description: The contract negotiations that match the query
           content:
             application/json:
               schema:
@@ -1158,7 +1146,7 @@ paths:
               $ref: '#/components/schemas/QuerySpecDto'
       responses:
         "200":
-          description: ""
+          description: The policy definitions matching the query
           content:
             application/json:
               schema:
@@ -1352,7 +1340,7 @@ paths:
               $ref: '#/components/schemas/QuerySpecDto'
       responses:
         "200":
-          description: ""
+          description: The transfer processes matching the query
           content:
             application/json:
               schema:
@@ -1629,7 +1617,7 @@ components:
       type: object
       properties:
         invalidValue:
-          type: string
+          type: object
           example: null
         message:
           type: string
