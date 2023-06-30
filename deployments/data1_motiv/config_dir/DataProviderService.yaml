@@ -6,8 +6,86 @@ assets:
   Full:
     description: "Complete Data"
     policy: default
-    constraints: {}
+    constraints: { }
 
+  MeasurementValues:
+    description: "Values measured during production"
+    policy: default
+    constraints:
+      columns: [ 'Timestamp', 'Material_ID', 'Benutzer 7', 'Benutzer 8', 'Benutzer b', 'Drehtellergeschwindigkeit',
+                 'Druck Formwerkzeug', 'FIT PT100', 'FIT Pyrometer', 'FIT Ringdüse', 'FIT Zentraldüse', 'FIT-Gegendruck',
+                 'Flächenheizer oben', 'Flächenheizer unten', 'Stempel Messkraft', 'Stempelgeschwindigkeit', 'Stempelposition',
+                 'VPCF-1 Durchfluss (Zentraldüse)', 'VPCF-2 Durchfluss (Ringdüse)', 'VPPM-1 Druck', 'VPPM-2 Druck',
+                 'Vakuum_Behaelter', 'Vakuum_Werkzeug', 'Zustandsname', 'one' ]
+
+  Parameters:
+    description: "Only set parameters"
+    policy: default
+    constraints:
+      columns: [ 'Timestamp',
+                 '::Druck-Regelventil VPPM 1::Amplitude', '::Druck-Regelventil VPPM 1::Bit 1',
+                 '::Druck-Regelventil VPPM 1::Bit 2', '::Druck-Regelventil VPPM 1::Frequenz',
+                 '::Druck-Regelventil VPPM 1::Impulsdauer', '::Druck-Regelventil VPPM 1::Maximalwert',
+                 '::Druck-Regelventil VPPM 1::Phasenverschiebung', '::Druck-Regelventil VPPM 1::Sinus?',
+                 '::Druck-Regelventil VPPM 1::Sollwert_1', '::Druck-Regelventil VPPM 1::Sollwert_2',
+                 '::Druck-Regelventil VPPM 1::Startzeit', '::Druck-Regelventil VPPM 1::Station',
+                 '::Druck-Regelventil VPPM 1::Wurzelexp', '::Druck-Regelventil VPPM 1::Wurzelkoeff',
+                 '::Druck-Regelventil VPPM 1::Zustand', '::Druck-Regelventil VPPM 1::a', '::Druck-Regelventil VPPM 1::b',
+                 '::Druck-Regelventil VPPM 1::c', '::Druck-Regelventil VPPM 1::d', '::Druck-Regelventil VPPM 1::dx',
+                 '::Druck-Regelventil VPPM 1::e', '::Druck-Regelventil VPPM 1::t12',
+                 '::Druck-Regelventil VPPM 1::Übertragungsfaktor der Regelstrecke', '::Druck-Regelventil VPPM 2::Amplitude',
+                 '::Druck-Regelventil VPPM 2::Bit 1', '::Druck-Regelventil VPPM 2::Bit 2', '::Druck-Regelventil VPPM 2::Frequenz',
+                 '::Druck-Regelventil VPPM 2::Impulsdauer', '::Druck-Regelventil VPPM 2::Maximalwert',
+                 '::Druck-Regelventil VPPM 2::Phasenverschiebung', '::Druck-Regelventil VPPM 2::Sinus?',
+                 '::Druck-Regelventil VPPM 2::Sollwert_1', '::Druck-Regelventil VPPM 2::Sollwert_2',
+                 '::Druck-Regelventil VPPM 2::Startzeit', '::Druck-Regelventil VPPM 2::Station',
+                 '::Druck-Regelventil VPPM 2::Wurzelexp', '::Druck-Regelventil VPPM 2::Wurzelkoeff',
+                 '::Druck-Regelventil VPPM 2::Zustand', '::Druck-Regelventil VPPM 2::a', '::Druck-Regelventil VPPM 2::b',
+                 '::Druck-Regelventil VPPM 2::c', '::Druck-Regelventil VPPM 2::d', '::Druck-Regelventil VPPM 2::dx',
+                 '::Druck-Regelventil VPPM 2::e', '::Druck-Regelventil VPPM 2::t12',
+                 '::Druck-Regelventil VPPM 2::Übertragungsfaktor der Regelstrecke', '::Durchfluss-Regelventil VPCF 1 (ZD)::Amplitude',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::Bit 1', '::Durchfluss-Regelventil VPCF 1 (ZD)::Bit 2',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::Frequenz', '::Durchfluss-Regelventil VPCF 1 (ZD)::Impulsdauer',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::Maximalwert', '::Durchfluss-Regelventil VPCF 1 (ZD)::Phasenverschiebung',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::Sinus?', '::Durchfluss-Regelventil VPCF 1 (ZD)::Sollwert_1',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::Sollwert_2', '::Durchfluss-Regelventil VPCF 1 (ZD)::Startzeit',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::Station', '::Durchfluss-Regelventil VPCF 1 (ZD)::Wurzelexp',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::Wurzelkoeff', '::Durchfluss-Regelventil VPCF 1 (ZD)::Zustand',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::a', '::Durchfluss-Regelventil VPCF 1 (ZD)::b',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::c', '::Durchfluss-Regelventil VPCF 1 (ZD)::d',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::dx', '::Durchfluss-Regelventil VPCF 1 (ZD)::e',
+                 '::Durchfluss-Regelventil VPCF 1 (ZD)::t12', '::Durchfluss-Regelventil VPCF 1 (ZD)::Übertragungsfaktor der Regelstrecke',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::Amplitude', '::Durchfluss-Regelventil VPCF 2 (RD)::Bit 1',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::Bit 2', '::Durchfluss-Regelventil VPCF 2 (RD)::Frequenz',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::Impulsdauer', '::Durchfluss-Regelventil VPCF 2 (RD)::Maximalwert',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::Phasenverschiebung', '::Durchfluss-Regelventil VPCF 2 (RD)::Sinus?',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::Sollwert_1', '::Durchfluss-Regelventil VPCF 2 (RD)::Sollwert_2',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::Startzeit', '::Durchfluss-Regelventil VPCF 2 (RD)::Station',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::Wurzelexp', '::Durchfluss-Regelventil VPCF 2 (RD)::Wurzelkoeff',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::Zustand', '::Durchfluss-Regelventil VPCF 2 (RD)::a',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::b', '::Durchfluss-Regelventil VPCF 2 (RD)::c',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::d', '::Durchfluss-Regelventil VPCF 2 (RD)::dx', '::Durchfluss-Regelventil VPCF 2 (RD)::e',
+                 '::Durchfluss-Regelventil VPCF 2 (RD)::t12', '::Durchfluss-Regelventil VPCF 2 (RD)::Übertragungsfaktor der Regelstrecke',
+                 '::Entlüftung (links)::Impulsdauer', '::Entlüftung (links)::Startzeit', '::Entlüftung (links)::Station',
+                 '::Entlüftung (links)::Zustand', '::Entlüftung (links)::aktiv', '::Entlüftung (links)::direkt',
+                 '::Entlüftung (rechts)::Impulsdauer', '::Entlüftung (rechts)::Startzeit', '::Entlüftung (rechts)::Station',
+                 '::Entlüftung (rechts)::Zustand', '::Entlüftung (rechts)::aktiv', '::Entlüftung (rechts)::direkt',
+                 '::Flächenheizer oben::Sollwert', '::Flächenheizer unten::Sollwert', '::Formdauer::Dauer', '::Halbzeug::Foliennummer',
+                 '::Halbzeug::Halbzeug', '::Halbzeug::Halbzeugdicke', '::Heizdauer Cera2Heat::Dauer', '::Heizdauer Flächenheizer::Dauer',
+                 '::Linienlaser::aktiv', '::Messzeit an Station 4::Dauer', '::Ringdüse::Impulsdauer', '::Ringdüse::Startzeit',
+                 '::Ringdüse::Station', '::Ringdüse::Zustand', '::Ringdüse::aktiv', '::Ringdüse::direkt', '::Stempel::Sollwert',
+                 '::Vakuum Erzeuger::Impulsdauer', '::Vakuum Erzeuger::Startzeit', '::Vakuum Erzeuger::Station', '::Vakuum Erzeuger::Zustand',
+                 '::Vakuum Erzeuger::aktiv', '::Vakuum Erzeuger::direkt', '::Vakuum Formstation::Impulsdauer', '::Vakuum Formstation::Startzeit',
+                 '::Vakuum Formstation::Station', '::Vakuum Formstation::Zustand', '::Vakuum Formstation::aktiv', '::Vakuum Formstation::direkt',
+                 '::Vorstreckstempel::Anfahrweg', '::Vorstreckstempel::Haltezeit', '::Vorstreckstempel::Hubverzögerungszeit',
+                 '::Vorstreckstempel::Kraft als Orientierungsgröße?', '::Vorstreckstempel::Ruck', '::Vorstreckstempel::Vorstreckbeschleunigung',
+                 '::Vorstreckstempel::Vorstreckgeschwindigkeit', '::Vorstreckstempel::Vorstreckkraft', '::Vorstreckstempel::Vorstreckweg',
+                 '::Vorstreckstempel::Wartedauer', '::Vorstreckstempel::aktiv', '::Vorstreckstempel::negative Beschleunigung',
+                 '::Vorstreckstempel::rueck', '::Vorstreckstempel::vor', '::Vorstreckstempel::vor Oberwerkzeug', '::Wartezeit an Station 2::Dauer',
+                 '::Wartezeit an Station 2::aktiv', '::Wartezeit an Station 3::Dauer', '::Wartezeit an Station 3::aktiv', '::Wartezeit an Station 4::Dauer',
+                 '::Wartezeit an Station 4::aktiv', '::Wartezeit an Station 6::Dauer', '::Werkzeug::Wert', '::Zentraldüse::Impulsdauer',
+                 '::Zentraldüse::Startzeit', '::Zentraldüse::Station', '::Zentraldüse::Zustand', '::Zentraldüse::aktiv', '::Zentraldüse::direkt',
+                 '::externe Technologieparameter::Bezeichnung' ]
 
 # each constraint attribute is a list of possible values and intervals (start, end) (default order)
 # for all possible values don't specify the constraint (or set another False value)
