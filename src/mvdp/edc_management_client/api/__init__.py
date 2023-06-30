@@ -1,13 +1,18 @@
 # flake8: noqa
 
 # import apis into api package
-from mvdp.edc_management_client.api.policy_api import PolicyApi
 from mvdp.edc_management_client.api.application_observability_api import ApplicationObservabilityApi
 from mvdp.edc_management_client.api.asset_api import AssetApi
 from mvdp.edc_management_client.api.catalog_api import CatalogApi
+from mvdp.edc_management_client.api.consumer_pull_token_validation_api import ConsumerPullTokenValidationApi
 from mvdp.edc_management_client.api.contract_agreement_api import ContractAgreementApi
 from mvdp.edc_management_client.api.contract_definition_api import ContractDefinitionApi
 from mvdp.edc_management_client.api.contract_negotiation_api import ContractNegotiationApi
+from mvdp.edc_management_client.api.data_plane_control_api_api import DataPlaneControlAPIApi
+from mvdp.edc_management_client.api.data_plane_public_api_api import DataPlanePublicAPIApi
 from mvdp.edc_management_client.api.dataplane_selector_api import DataplaneSelectorApi
 from mvdp.edc_management_client.api.http_provisioner_webhook_api import HTTPProvisionerWebhookApi
+from mvdp.edc_management_client.api.policy_definition_api import PolicyDefinitionApi
 from mvdp.edc_management_client.api.transfer_process_api import TransferProcessApi
+from mvdp.edc_management_client.api.transfer_process_control_api_api import TransferProcessControlApiApi
+

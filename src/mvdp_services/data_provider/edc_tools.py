@@ -1,10 +1,11 @@
 import hashlib
 import logging
+import unittest
 
 from mvdp.edc_management_client.api import AssetApi
 from mvdp.edc_management_client.api_client import ApiClient
 from mvdp.edc_management_client.configuration import Configuration
-from mvdp.edc_management_client.models import AssetCreationRequestDto, AssetEntryDto, DataAddress
+from mvdp.edc_management_client.models import DataAddress
 from mvdp.edc_management_client.rest import ApiException
 from mvdp.env import mvdp_env
 
@@ -20,6 +21,11 @@ def init_edc():
 
 
 def edc_put_assets(api_client, assets):
+
+    # TODO: Adjust to latest API
+    logging.error("Cannot update to EDC, API not adjusted yet. Aborting upload action")
+    return
+
     asset_api_instance = AssetApi(api_client)
 
     for asset_name, asset_body in assets.items():
